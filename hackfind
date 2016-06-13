@@ -1,3 +1,51 @@
-#!/bin/bash
+#!/usr/bin/env python
 
+from time import *
+import getopt, sys
 
+ofile = ""
+
+def show_output(text):
+    print "%s | %s" % (time(), text)
+
+def debug(text):
+    if DEBUG: show_output(text)
+
+def usage():
+    print "USAGE: hackfind -i INFILE -o OUTFILE [-v | --verbose] [-h | --help]\n"
+    print "  INFILE  - the router log file"
+    print "  OUTFILE - the report file"
+    print "\nOPTIONS:"
+    print "  -v, --verbose\t show verbose output (def. off)"
+    print "  -h, --help   \t show this help information"
+
+try:
+    opts, args = getopt.getopt(sys.argv[1:], "i:o:vh", ["input=", "output=", "verbose", "help"])
+except getopt.GetoptError as err:
+    print str(err)
+    usage()
+    sys.exit(2)
+
+# define values
+DEBUG=False
+
+for o, a in opts:
+    if o == "-v":
+        DEBUG = True
+    elif o in ("-h", "--help"):
+        usage()
+        sys.exit(0)
+    elif o in ("-i", "--input"):
+        ifile = a
+    elif o in ("-o", "--output"):
+        ofile = a
+    else:
+        assert False, "invalid option: %s" % o
+
+debug("USING: ifile=%s" % ifile)
+
+if len(ifile) == 0:
+    die("missing or invalid filename: %s" % ifile)
+
+if len(ofile) > 0:
+    sys.stdout = open(ofile, "w")
