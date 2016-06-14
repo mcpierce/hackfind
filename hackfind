@@ -1,12 +1,24 @@
 #!/usr/bin/env python
 
-from time import *
+import time
+from datetime import datetime
 import getopt, sys
+import re
+
+IP_RE = "\d+\.\d+\.\d+\.\d+"
+default_timestamp_re = re.compile("(Sun|Mon|Tue|Wed|Thu|Fri|Sat), (.+) (.+) (.+) (.+) (.+) \(PST\)$")
+access_attempt_re = re.compile("\[LAN access from remote] from (%s)" % IP_RE)
+access_attempt_with_datetime_re = re.compile("\[LAN access from remote] from (%s):\d+ to %s:\d+, (Sunday|Monday|Tuesday|Wednesday|Thursday|Friday|Saturday), (.*)" % (IP_RE, IP_RE))
+
+default_datetime = ""
+
+def get_timestamp(timestamp):
+    return datetime.fromtimestamp(int(timestamp)).strftime("%m/%d/%Y %H:%M:%S")
 
 ofile = ""
 
 def show_output(text):
-    print "%s | %s" % (time(), text)
+    print "%s | %s" % (get_timestamp(time.time()), text)
 
 def debug(text):
     if DEBUG: show_output(text)
@@ -18,6 +30,39 @@ def usage():
     print "\nOPTIONS:"
     print "  -v, --verbose\t show verbose output (def. off)"
     print "  -h, --help   \t show this help information"
+
+def convert_month_first(timestamp):
+    return time.mktime(datetime.strptime(timestamp, "%B %d, %Y %H:%M:%S").timetuple())
+
+def get_default_datetime(line):
+    # match = re.search(DEFAULT_TIMESTAMP_RE, line)
+    match = default_timestamp_re.search(line)
+    global default_datetime
+    line = "%s %s %s %s" % (match.group(2), match.group(3), match.group(4), match.group(5))
+    default_datetime = time.mktime(datetime.strptime(line, "%d %b %Y %H:%M:%S").timetuple())
+
+def get_access_source(line):
+    # first see if we have a datetime entry
+    match = access_attempt_with_datetime_re.search(line)
+    if match:
+        source = match.group(1)
+        when = convert_month_first(match.group(3))
+    else:
+        match = access_attempt_re.search(line)
+        source = match.group(1)
+        when = default_datetime
+    show_output("access source=%s on %s" % (source, get_timestamp(when)))
+
+def process_line(line):
+    line = line.strip("\r\n")
+    debug("read=%s" % line)
+    # if the line contains "(PST)" then it has a default date stamp
+    # if re.search(DEFAULT_TIMESTAMP_RE, line):
+    if default_timestamp_re.search(line):
+        get_default_datetime(line)
+    elif access_attempt_re.search(line):
+        get_access_source(line)
+        
 
 try:
     opts, args = getopt.getopt(sys.argv[1:], "i:o:vh", ["input=", "output=", "verbose", "help"])
@@ -49,3 +94,23 @@ if len(ifile) == 0:
 
 if len(ofile) > 0:
     sys.stdout = open(ofile, "w")
+
+# the ifile is read and processed into a hash
+#
+# the key is the source IP address
+# the value an array
+#
+# the value array has two elements:
+# * the country of origin for the IP address, and
+# * the date and time of the access attempt
+
+results = {}
+
+show_output("Loading file: %s" % ifile)
+
+with open(ifile) as f:
+    lines = f.readlines()
+    for line in lines:
+        process_line(line)
+
+show_output("Finished!")
