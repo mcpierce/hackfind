@@ -175,7 +175,7 @@ for country in sorted(DETAILS.keys()):
                                         get_datestamp(address_details[0]),
                                         get_datestamp(address_details[len(address_details)-1]))
         print ""
-        print "IP ADDRESS: %s [%d attempt(s)]" % (address, len(address_details))
+        print "IP ADDRESS: %s [%d attempt(s)] from %s to %s" % (address, len(address_details), get_datestamp(address_oldest), get_datestamp(address_newest))
         print "SOURCE ADDRESS  DATE OF ACCESS"
         print "=============== ==================="
         for detail in sorted(address_details):
