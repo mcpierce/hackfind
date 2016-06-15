@@ -25,8 +25,6 @@ def get_datestamp(timestamp):
 def get_number_of_days(newest, oldest):
     return (datetime.utcfromtimestamp(newest) - datetime.utcfromtimestamp(oldest)).days
 
-ofile = ""
-
 def show_output(text):
     print "%s | %s" % (get_timestamp(time.time()), text)
 
@@ -89,8 +87,17 @@ def process_line(line):
         get_access_source(line)
         
 
+ofile = cfile = None
+
 try:
-    opts, args = getopt.getopt(sys.argv[1:], "i:o:vh", ["input=", "output=", "verbose", "help"])
+    opts, args = getopt.getopt(sys.argv[1:], "i:o:c:vh",
+                               [
+                                   "input=",
+                                   "output=",
+                                   "csv=",
+                                   "verbose",
+                                   "help"
+                               ])
 except getopt.GetoptError as err:
     print str(err)
     usage()
@@ -109,6 +116,8 @@ for o, a in opts:
         ifile = a
     elif o in ("-o", "--output"):
         ofile = a
+    elif o in ("-c", "--csv"):
+        cfile = a
     else:
         assert False, "invalid option: %s" % o
 
@@ -193,5 +202,18 @@ for access in accesses:
 sys.stdout.close()
 
 sys.stdout = old_stdout
+
+if len(cfile) > 0:
+    show_output("Writing CSV file: %s" % cfile)
+
+    sys.stdout = open(cfile, "w")
+    for country in sorted(DETAILS.keys()):
+        country_details = DETAILS.get(country)
+        for address in sorted(country_details.keys()):
+            address_details = country_details.get(address)
+            for detail in sorted(address_details):
+                print "\"%s\",\"%s\",\"%s\"" % (country, address, get_timestamp(detail))
+    sys.stdout.close()
+    sys.stdout = old_stdout
 
 show_output("Finished!")
