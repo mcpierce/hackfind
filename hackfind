@@ -150,6 +150,7 @@ old_stdout = sys.stdout
 access_count = 0
 most_attempts = [0, None]
 single_most_attempts = [0, None, None]
+longest_running_attempts = [0, None, None, None, None]
 oldest = newest = None
 accesses = []
 
@@ -166,6 +167,13 @@ for country in sorted(DETAILS.keys()):
         address_details = country_details.get(address)
         if len(address_details) > single_most_attempts[0]:
             single_most_attempts = (len(address_details), address, country)
+        address_oldest = address_details[0]
+        address_newest = address_details[len(address_details) - 1]
+        if get_number_of_days(address_newest, address_oldest) > longest_running_attempts[0]:
+            longest_running_attempts = (get_number_of_days(address_newest, address_oldest),
+                                        len(address_details), address, country,
+                                        get_datestamp(address_details[0]),
+                                        get_datestamp(address_details[len(address_details)-1]))
         print ""
         print "IP ADDRESS: %s [%d attempt(s)]" % (address, len(address_details))
         print "SOURCE ADDRESS  DATE OF ACCESS"
@@ -192,6 +200,7 @@ print ""
 print "===== Total records: %d" % access_count
 print "===== Most attempts (%d total) from country %s" % most_attempts
 print "===== Most attempts (%d total) from address %s (%s)" % single_most_attempts
+print "===== Longest running (%d days, %d total) accesses from address %s (%s) between %s and %s" % longest_running_attempts
 print "===== Oldest record: %s" % get_timestamp(oldest)
 print "===== Newest record: %s (a span of %d days)" % (get_timestamp(newest), get_number_of_days(newest, oldest))
 print ""
