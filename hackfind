@@ -8,6 +8,7 @@ import GeoIP
 
 GI = GeoIP.new(GeoIP.GEOIP_MEMORY_CACHE)
 DETAILS = {}
+TOTALS = {}
 
 IP_RE = "\d+\.\d+\.\d+\.\d+"
 default_timestamp_re = re.compile("(Sun|Mon|Tue|Wed|Thu|Fri|Sat), (.+) (.+) (.+) (.+) (.+) \(PST\)$")
@@ -21,6 +22,9 @@ def get_timestamp(timestamp):
 
 def get_datestamp(timestamp):
     return datetime.fromtimestamp(int(timestamp)).strftime("%m/%d/%Y")
+
+def get_month_and_year(timestamp):
+    return datetime.fromtimestamp(int(timestamp)).strftime("%m/%Y")
 
 def get_number_of_days(newest, oldest):
     return (datetime.utcfromtimestamp(newest) - datetime.utcfromtimestamp(oldest)).days
@@ -62,6 +66,16 @@ def store_access_detail(geoip, source, when):
         country[source] = for_address
     for_address.append(when)
 
+    # if we're doing totals, then add them
+    if len(tfile) > 0:
+        date = get_month_and_year(when)
+        record = TOTALS.get(date)
+        if record is None:
+            record = 0
+            TOTALS[date] = record
+        record = record + 1
+        TOTALS[date] = record
+
 def get_access_source(line):
     # return from any P2P access attempts
     if re.search(r':52017', line): return
@@ -89,13 +103,14 @@ def process_line(line):
         get_access_source(line)
         
 
-ofile = cfile = None
+ofile = cfile = tfile = None
 
 try:
-    opts, args = getopt.getopt(sys.argv[1:], "i:o:c:vh",
+    opts, args = getopt.getopt(sys.argv[1:], "i:o:c:t:vh",
                                [
                                    "input=",
                                    "output=",
+                                   "totals=",
                                    "csv=",
                                    "verbose",
                                    "help"
@@ -120,6 +135,8 @@ for o, a in opts:
         ofile = a
     elif o in ("-c", "--csv"):
         cfile = a
+    elif o in ("-t", "--totals"):
+        tfile = a
     else:
         assert False, "invalid option: %s" % o
 
@@ -225,6 +242,17 @@ if len(cfile) > 0:
             address_details = country_details.get(address)
             for detail in sorted(address_details):
                 print "\"%s\",\"%s\",\"%s\"" % (get_timestamp(detail), country, address)
+    sys.stdout.close()
+    sys.stdout = old_stdout
+
+if len(tfile) > 0:
+    show_output("Writing totals file: %s" % tfile)
+
+    sys.stdout = open(tfile, "w")
+    print "\"DATE\",\"ATTEMPTS\""
+    for date in sorted(TOTALS.keys()):
+        record = TOTALS.get(date)
+        print "\"%s\",\"%s\"" % (date, record)
     sys.stdout.close()
     sys.stdout = old_stdout
 
