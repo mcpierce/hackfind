@@ -218,12 +218,13 @@ if len(cfile) > 0:
     show_output("Writing CSV file: %s" % cfile)
 
     sys.stdout = open(cfile, "w")
+    print "\"DATE\",\"COUNTRY\",\"IP ADDRESS\""
     for country in sorted(DETAILS.keys()):
         country_details = DETAILS.get(country)
         for address in sorted(country_details.keys()):
             address_details = country_details.get(address)
             for detail in sorted(address_details):
-                print "\"%s\",\"%s\",\"%s\"" % (country, address, get_timestamp(detail))
+                print "\"%s\",\"%s\",\"%s\"" % (get_timestamp(detail), country, address)
     sys.stdout.close()
     sys.stdout = old_stdout
 
