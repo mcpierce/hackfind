@@ -19,6 +19,12 @@ default_datetime = ""
 def get_timestamp(timestamp):
     return datetime.fromtimestamp(int(timestamp)).strftime("%m/%d/%Y %H:%M:%S")
 
+def get_datestamp(timestamp):
+    return datetime.fromtimestamp(int(timestamp)).strftime("%m/%d/%Y")
+
+def get_number_of_days(newest, oldest):
+    return (datetime.utcfromtimestamp(newest) - datetime.utcfromtimestamp(oldest)).days
+
 ofile = ""
 
 def show_output(text):
@@ -111,9 +117,6 @@ debug("USING: ifile=%s" % ifile)
 if len(ifile) == 0:
     die("missing or invalid filename: %s" % ifile)
 
-if len(ofile) > 0:
-    sys.stdout = open(ofile, "w")
-
 # the ifile is read and processed into a hash
 #
 # the key is the source IP address
@@ -132,17 +135,63 @@ with open(ifile) as f:
     for line in lines:
         process_line(line)
 
-# show_output("Writing to %s" % ofile)
+old_stdout = sys.stdout
+access_count = 0
+most_attempts = [0, None]
+single_most_attempts = [0, None, None]
+oldest = newest = None
+accesses = []
+
+if len(ofile) > 0:
+    sys.stdout = open(ofile, "w")
+    show_output("Writing to %s" % ofile)
 
 for country in sorted(DETAILS.keys()):
+    access_by_country = 0
+    country_oldest = country_newest = None
     country_details = DETAILS.get(country)
-    print "COUNTRY: %s (total records=%d)" % (country, len(country_details))
+    print "===== COUNTRY: %s (total addresses found=%d)" % (country, len(country_details))
     for address in sorted(country_details.keys()):
         address_details = country_details.get(address)
-        print "IP ADDRESS: %s (total records=%d)" % (address_details, len(address_details))
-        print "SOURCE ADDRESS                DATE OF ACCESS"
-        print "============================= ==================="
+        if len(address_details) > single_most_attempts[0]:
+            single_most_attempts = (len(address_details), address, country)
+        print ""
+        print "IP ADDRESS: %s [%d attempt(s)]" % (address, len(address_details))
+        print "SOURCE ADDRESS  DATE OF ACCESS"
+        print "=============== ==================="
         for detail in sorted(address_details):
-            print "%s %s" % (address, detail)
+            if oldest is None or detail < oldest:
+                oldest = detail
+            if country_oldest is None or detail < country_oldest:
+                country_oldest = detail
+            if newest is None or newest < detail:
+                newest = detail
+            if country_newest is None or country_newest < detail:
+                country_newest = detail
+            print "%15s %s" % (address, get_timestamp(detail))
+        access_count = access_count + len(address_details)
+        access_by_country = access_by_country + len(address_details)
+    if access_by_country > most_attempts[0]:
+        most_attempts = (access_by_country, country)
+    accesses.append((country, len(country_details), access_by_country, get_datestamp(country_oldest), get_datestamp(country_newest), get_number_of_days(country_newest, country_oldest)))
+    print ""
+    print "TOTAL ATTEMPTS: %d" % access_by_country
+    print ""
+print ""
+print "===== Total records: %d" % access_count
+print "===== Most attempts (%d total) from country %s" % most_attempts
+print "===== Most attempts (%d total) from address %s (%s)" % single_most_attempts
+print "===== Oldest record: %s" % get_timestamp(oldest)
+print "===== Newest record: %s (a span of %d days)" % (get_timestamp(newest), get_number_of_days(newest, oldest))
+print ""
+print "Country totals:"
+print "                  COUNTRY                 ADDRS  TOTAL    OLDEST      NEWEST    # DAYS"
+print "========================================  =====  =====  ==========  ==========  ======"
+for access in accesses:
+    print "%-40s  %5d  %5d  %s  %s %6s" % access
+
+sys.stdout.close()
+
+sys.stdout = old_stdout
 
 show_output("Finished!")
