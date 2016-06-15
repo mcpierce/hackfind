@@ -4,6 +4,10 @@ import time
 from datetime import datetime
 import getopt, sys
 import re
+import GeoIP
+
+GI = GeoIP.new(GeoIP.GEOIP_MEMORY_CACHE)
+DETAILS = {}
 
 IP_RE = "\d+\.\d+\.\d+\.\d+"
 default_timestamp_re = re.compile("(Sun|Mon|Tue|Wed|Thu|Fri|Sat), (.+) (.+) (.+) (.+) (.+) \(PST\)$")
@@ -41,6 +45,19 @@ def get_default_datetime(line):
     line = "%s %s %s %s" % (match.group(2), match.group(3), match.group(4), match.group(5))
     default_datetime = time.mktime(datetime.strptime(line, "%d %b %Y %H:%M:%S").timetuple())
 
+def store_access_detail(geoip, source, when):
+    # get the country's details, then get the source IP address's details
+    # DETAILS[country] = {source => [when0, when1, ..., whenn]}
+    country = DETAILS.get(geoip)
+    if country is None:
+        country = {}
+        DETAILS[geoip] = country
+    for_address = country.get(source)
+    if for_address is None:
+        for_address = []
+        country[source] = for_address
+    for_address.append(when)
+
 def get_access_source(line):
     # first see if we have a datetime entry
     match = access_attempt_with_datetime_re.search(line)
@@ -51,7 +68,9 @@ def get_access_source(line):
         match = access_attempt_re.search(line)
         source = match.group(1)
         when = default_datetime
-    show_output("access source=%s on %s" % (source, get_timestamp(when)))
+    # get the geoip information for the source
+    geoip = GI.country_name_by_addr(source)
+    store_access_detail(geoip, source, when)
 
 def process_line(line):
     line = line.strip("\r\n")
@@ -112,5 +131,18 @@ with open(ifile) as f:
     lines = f.readlines()
     for line in lines:
         process_line(line)
+
+# show_output("Writing to %s" % ofile)
+
+for country in sorted(DETAILS.keys()):
+    country_details = DETAILS.get(country)
+    print "COUNTRY: %s (total records=%d)" % (country, len(country_details))
+    for address in sorted(country_details.keys()):
+        address_details = country_details.get(address)
+        print "IP ADDRESS: %s (total records=%d)" % (address_details, len(address_details))
+        print "SOURCE ADDRESS                DATE OF ACCESS"
+        print "============================= ==================="
+        for detail in sorted(address_details):
+            print "%s %s" % (address, detail)
 
 show_output("Finished!")
