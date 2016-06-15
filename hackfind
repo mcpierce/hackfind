@@ -63,6 +63,8 @@ def store_access_detail(geoip, source, when):
     for_address.append(when)
 
 def get_access_source(line):
+    # return from any P2P access attempts
+    if re.search(r':52017', line): return
     # first see if we have a datetime entry
     match = access_attempt_with_datetime_re.search(line)
     if match:
