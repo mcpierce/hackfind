@@ -184,8 +184,8 @@ for country in sorted(DETAILS.keys()):
         address_details = country_details.get(address)
         if len(address_details) > single_most_attempts[0]:
             single_most_attempts = (len(address_details), address, country)
-        address_oldest = address_details[0]
-        address_newest = address_details[len(address_details) - 1]
+        address_oldest = sorted(address_details)[0]
+        address_newest = sorted(address_details)[len(address_details) - 1]
         if get_number_of_days(address_newest, address_oldest) > longest_running_attempts[0]:
             longest_running_attempts = (get_number_of_days(address_newest, address_oldest),
                                         len(address_details), address, country,
