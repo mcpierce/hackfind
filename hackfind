@@ -6,6 +6,40 @@ import getopt, sys
 import re
 import GeoIP
 
+class Address:
+    """Represents a single IP address."""
+
+    def __init__(self, address):
+        self.__address = address
+        self.__attempts = [] # (date, port)
+
+    def add_attempt(self, date, port):
+        self.__attempts.append([date, port])
+
+    @property
+    def address(self):
+        return self.__address
+
+    @property
+    def attempts(self):
+        return self.__attempts
+
+    @property
+    def oldest_attempt(self):
+        return sorted(self.__attempts)[0]
+
+    @property
+    def latest_attempt(self):
+        return sorted(self.__attempts)[-1]
+
+    @property
+    def total_attempts(self):
+        return len(self.__attempts)
+
+    @property
+    def attempts_sorted_by_date(self):
+        return sorted(self.__attempts, key=lambda attempt: attempt[0])
+
 GI = GeoIP.new(GeoIP.GEOIP_MEMORY_CACHE)
 DETAILS = {}
 TOTALS = {}
@@ -60,11 +94,11 @@ def store_access_detail(geoip, source, when):
     if country is None:
         country = {}
         DETAILS[geoip] = country
-    for_address = country.get(source)
-    if for_address is None:
-        for_address = []
-        country[source] = for_address
-    for_address.append(when)
+    address = country.for_address(source)
+    if address is None:
+        address = Address(source)
+        country.add_address(address)
+    address.add_attempt(when, 22) # TODO: Fix the port being accessed
 
     # if we're doing totals, then add them
     if len(tfile) > 0:
@@ -101,6 +135,20 @@ def process_line(line):
         get_default_datetime(line)
     elif access_attempt_re.search(line):
         get_access_source(line)
+
+def update_top_offenders(top_offenders_list, count, country):
+    # find a country with fewer offenses and insert the supplied country
+    index = 0
+    while top_offenders_list[index] is not None and top_offenders_list[index][0] >= count and index < len(top_offenders_list):
+        print "Updating %d for %s (%d)" % (index, country, count)
+        index = index + 1
+    if index < len(top_offenders_list):
+        current = len(top_offenders_list) - 1
+        while current > index and current > 1:
+            top_offenders_list[current] = top_offenders_list[current - 1]
+            current = current - 1
+        print "Inserting %s at %d" % (country, index)
+        top_offenders_list[index] = [count, country]
         
 
 ofile = cfile = tfile = None
@@ -170,6 +218,7 @@ single_most_attempts = [0, None, None]
 longest_running_attempts = [0, None, None, None, None]
 oldest = newest = None
 accesses = []
+top_offenders = [None, None, None, None, None]
 
 if len(ofile) > 0:
     sys.stdout = open(ofile, "w")
@@ -182,20 +231,21 @@ for country in sorted(DETAILS.keys()):
     print "===== COUNTRY: %s (total addresses found=%d)" % (country, len(country_details))
     for address in sorted(country_details.keys()):
         address_details = country_details.get(address)
-        if len(address_details) > single_most_attempts[0]:
-            single_most_attempts = (len(address_details), address, country)
-        address_oldest = sorted(address_details)[0]
-        address_newest = sorted(address_details)[len(address_details) - 1]
-        if get_number_of_days(address_newest, address_oldest) > longest_running_attempts[0]:
-            longest_running_attempts = (get_number_of_days(address_newest, address_oldest),
-                                        len(address_details), address, country,
-                                        get_datestamp(address_details[0]),
-                                        get_datestamp(address_details[len(address_details)-1]))
+        if address_details.total_attempts > single_most_attempts[0]:
+            single_most_attempts = (address_details.total_attempts, address, country)
+        address_oldest = address_details.oldest_attempt
+        address_newest = address_details.latest_attempt
+        if get_number_of_days(address_newest[0], address_oldest[0]) > longest_running_attempts[0]:
+            longest_running_attempts = (get_number_of_days(address_newest[0], address_oldest[0]),
+                                        address_details.total_attempts, address, country,
+                                        get_datestamp(address_oldest[0]),
+                                        get_datestamp(address_newest[0]))
         print ""
-        print "IP ADDRESS: %s [%d attempt(s)] from %s to %s" % (address, len(address_details), get_datestamp(address_oldest), get_datestamp(address_newest))
+        print "IP ADDRESS: %s [%d attempt(s)] from %s to %s" % (address, address_details.total_attempts, get_datestamp(address_oldest[0]), get_datestamp(address_newest[0]))
         print "SOURCE ADDRESS  DATE OF ACCESS"
         print "=============== ==================="
-        for detail in sorted(address_details):
+        for detail in sorted(address_details.attempts):
+            detail = detail[0]
             if oldest is None or detail < oldest:
                 oldest = detail
             if country_oldest is None or detail < country_oldest:
@@ -205,10 +255,11 @@ for country in sorted(DETAILS.keys()):
             if country_newest is None or country_newest < detail:
                 country_newest = detail
             print "%15s %s" % (address, get_timestamp(detail))
-        access_count = access_count + len(address_details)
-        access_by_country = access_by_country + len(address_details)
+        access_count = access_count + address_details.total_attempts
+        access_by_country = access_by_country + address_details.total_attempts
     if access_by_country > most_attempts[0]:
         most_attempts = (access_by_country, country)
+    # update_top_offenders(top_offenders, access_by_country, country)
     accesses.append((country, len(country_details), access_by_country, get_datestamp(country_oldest), get_datestamp(country_newest), get_number_of_days(country_newest, country_oldest)))
     print ""
     print "TOTAL ATTEMPTS: %d" % access_by_country
@@ -220,6 +271,11 @@ print "===== Most attempts (%d total) from address %s (%s)" % single_most_attemp
 print "===== Longest running (%d days, %d total) accesses from address %s (%s) between %s and %s" % longest_running_attempts
 print "===== Oldest record: %s" % get_timestamp(oldest)
 print "===== Newest record: %s (a span of %d days)" % (get_timestamp(newest), get_number_of_days(newest, oldest))
+print ""
+print "===== Top %d offending countrys (by access attempts)" % len(top_offenders)
+for offender in top_offenders:
+    if offender is not None:
+        print "===== %s (%d total access attempts)" % (offender[1], offender[0])
 print ""
 print "Country totals:"
 print "                  COUNTRY                 ADDRS  TOTAL    OLDEST      NEWEST    # DAYS"
@@ -240,8 +296,8 @@ if len(cfile) > 0:
         country_details = DETAILS.get(country)
         for address in sorted(country_details.keys()):
             address_details = country_details.get(address)
-            for detail in sorted(address_details):
-                print "\"%s\",\"%s\",\"%s\"" % (get_timestamp(detail), country, address)
+            for detail in address_details.attempts_sorted_by_date:
+                print "\"%s\",\"%s\",\"%s\"" % (get_timestamp(detail[0]), country, address)
     sys.stdout.close()
     sys.stdout = old_stdout
 
