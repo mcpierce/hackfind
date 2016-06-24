@@ -1,5 +1,7 @@
 #!/usr/bin/env python
 
+from __future__ import print_function
+
 import time
 from datetime import datetime
 import getopt, sys
@@ -124,7 +126,6 @@ class Address:
         return sorted(self.__attempts, key=lambda attempt: attempt[0])
 
 GI = GeoIP.new(GeoIP.GEOIP_MEMORY_CACHE)
-DETAILS = {}
 TOTALS = {}
 
 IP_RE = "\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}"
@@ -147,18 +148,18 @@ def get_number_of_days(newest, oldest):
     return (datetime.utcfromtimestamp(newest) - datetime.utcfromtimestamp(oldest)).days
 
 def show_output(text):
-    print "%s | %s" % (get_timestamp(time.time()), text)
+    print("%s | %s" % (get_timestamp(time.time()), text))
 
 def debug(text):
     if DEBUG: show_output(text)
 
 def usage():
-    print "USAGE: hackfind -i INFILE -o OUTFILE [-v | --verbose] [-h | --help]\n"
-    print "  INFILE  - the router log file"
-    print "  OUTFILE - the report file"
-    print "\nOPTIONS:"
-    print "  -v, --verbose\t show verbose output (def. off)"
-    print "  -h, --help   \t show this help information"
+    print("USAGE: hackfind -i INFILE -o OUTFILE [-v | --verbose] [-h | --help]\n")
+    print("  INFILE  - the router log file")
+    print("  OUTFILE - the report file")
+    print("\nOPTIONS:")
+    print("  -v, --verbose\t show verbose output (def. off)")
+    print("  -h, --help   \t show this help information")
 
 def convert_month_first(timestamp):
     return time.mktime(datetime.strptime(timestamp, "%B %d, %Y %H:%M:%S").timetuple())
@@ -172,11 +173,9 @@ def get_default_datetime(line):
 
 def store_access_detail(geoip, source, when):
     # get the country's details, then get the source IP address's details
-    # DETAILS[country] = {source => [when0, when1, ..., whenn]}
-    country = DETAILS.get(geoip)
+    country = Country.for_name(geoip)
     if country is None:
         country = Country(geoip)
-        DETAILS[geoip] = country
     address = country.for_address(source)
     if address is None:
         address = Address(source)
@@ -223,14 +222,14 @@ def update_top_offenders(top_offenders_list, count, country):
     # find a country with fewer offenses and insert the supplied country
     index = 0
     while top_offenders_list[index] is not None and top_offenders_list[index][0] >= count and index < len(top_offenders_list):
-        print "Updating %d for %s (%d)" % (index, country, count)
+        print("Updating %d for %s (%d)" % (index, country, count))
         index = index + 1
     if index < len(top_offenders_list):
         current = len(top_offenders_list) - 1
         while current > index and current > 1:
             top_offenders_list[current] = top_offenders_list[current - 1]
             current = current - 1
-        print "Inserting %s at %d" % (country, index)
+        print("Inserting %s at %d" % (country, index))
         top_offenders_list[index] = [count, country]
         
 
@@ -247,7 +246,7 @@ try:
                                    "help"
                                ])
 except getopt.GetoptError as err:
-    print str(err)
+    print(str(err))
     usage()
     sys.exit(2)
 
@@ -295,70 +294,58 @@ with open(ifile) as f:
         process_line(line)
 
 old_stdout = sys.stdout
-access_count = 0
 most_attempts = [0, None]
 single_most_attempts = [0, None, None]
 longest_running_attempts = [0, None, None, None, None]
 oldest = newest = None
-accesses = []
 top_offenders = [None, None, None, None, None]
 
 if len(ofile) > 0:
-    sys.stdout = open(ofile, "w")
     show_output("Writing to %s" % ofile)
+    sys.stdout = open(ofile, "w")
 
-for country in sorted(DETAILS.keys()):
-    access_by_country = 0
-    country_details = DETAILS.get(country)
-    print "===== COUNTRY: %s (total addresses found=%d)" % (country, country_details.total_addresses)
-    for address in sorted(country_details.sorted_addresses):
-        address_details = country_details.for_address(address)
-        if address_details.total_attempts > single_most_attempts[0]:
-            single_most_attempts = (address_details.total_attempts, address, country)
-        address_oldest = address_details.oldest_attempt
-        address_newest = address_details.latest_attempt
+for country in Country.by_name():
+    print("COUNTRY: %s" % country.name)
+    print("         Total addresses..: %d" % country.total_addresses)
+    print("         Total attempts...: %d" % country.total_attempts)
+    print("")
+    for address in sorted(country.sorted_addresses):
+        address_oldest = address.oldest_attempt
+        address_newest = address.latest_attempt
         if get_number_of_days(address_newest[0], address_oldest[0]) > longest_running_attempts[0]:
             longest_running_attempts = (get_number_of_days(address_newest[0], address_oldest[0]),
-                                        address_details.total_attempts, address, country,
+                                        address.total_attempts, address, country,
                                         get_datestamp(address_oldest[0]),
                                         get_datestamp(address_newest[0]))
-        print ""
-        print "IP ADDRESS: %s [%d attempt(s)] from %s to %s" % (address, address_details.total_attempts, get_datestamp(address_oldest[0]), get_datestamp(address_newest[0]))
-        print "SOURCE ADDRESS  DATE OF ACCESS"
-        print "=============== ==================="
-        for detail in sorted(address_details.attempts):
-            if newest is None or detail[0] > newest:
-                newest = detail[0]
-            if oldest is None or detail[0] < oldest:
-                oldest = detail[0]
-            print "%15s %s" % (address, get_timestamp(detail[0]))
-        access_count = access_count + address_details.total_attempts
-        access_by_country = access_by_country + address_details.total_attempts
-    if access_by_country > most_attempts[0]:
-        most_attempts = (access_by_country, country)
-    # update_top_offenders(top_offenders, access_by_country, country)
-    accesses.append((country, country_details.total_addresses, access_by_country, get_datestamp(country_details.oldest_attempt), get_datestamp(country_details.newest_attempt), get_number_of_days(country_details.newest_attempt, country_details.oldest_attempt)))
-    print ""
-    print "TOTAL ATTEMPTS: %d" % access_by_country
-    print ""
-print ""
-print "===== Total records: %d" % access_count
-print "===== Most attempts (%d total) from country %s" % most_attempts
-print "===== Most attempts (%d total) from address %s (%s)" % single_most_attempts
-print "===== Longest running (%d days, %d total) accesses from address %s (%s) between %s and %s" % longest_running_attempts
-print "===== Oldest record: %s" % get_timestamp(oldest)
-print "===== Newest record: %s (a span of %d days)" % (get_timestamp(newest), get_number_of_days(newest, oldest))
-print ""
-print "===== Top %d offending countrys (by access attempts)" % len(top_offenders)
-for offender in top_offenders:
+        print("")
+        print("IP ADDRESS: %s [%d attempt(s)] from %s to %s" % (address.address, address.total_attempts, get_datestamp(address_oldest[0]), get_datestamp(address_newest[0])))
+        print("  DATE OF ACCESS    PORT#    DATE OF ACCESS    PORT#    DATE OF ACCESS    PORT#")
+        print("=================== =====  =================== =====  =================== =====")
+        which = 0
+        for attempt in address.attempts:
+            if which in [1, 2]:
+                print("  ", end='')
+            print("%19s %5d" % (get_timestamp(attempt[0]), attempt[1]), end='')
+            which = which + 1
+            if which is 3:
+                print("")
+                which = 0
+        print("")
+    print("")
+    print("")
+    print("")
+    print("")
+print("")
+print("===== Top %d offending countries (by access attempts)" % len(top_offenders))
+for offender in Country.get_top_offenders():
     if offender is not None:
-        print "===== %s (%d total access attempts)" % (offender[1], offender[0])
-print ""
-print "Country totals:"
-print "                  COUNTRY                 ADDRS  TOTAL    OLDEST      NEWEST    # DAYS"
-print "========================================  =====  =====  ==========  ==========  ======"
-for access in accesses:
-    print "%-40s  %5d  %5d  %s  %s %6s" % access
+        print("      %40s: %5d attempts   %3d addresses   Ratio=%0.3f)" % (offender.name, offender.total_attempts, offender.total_addresses, offender.attack_ratio))
+print("")
+print("Country totals:")
+print("                  COUNTRY                 ADDRS  TOTAL    OLDEST      NEWEST    # DAYS")
+print("========================================  =====  =====  ==========  ==========  ======")
+for country in sorted(Country.get_instances(), key = lambda x: x.raw_name):
+    print("%-40s  %5d  %5d  %s  %s  %6s" % (country.name, country.total_addresses, country.total_attempts, get_datestamp(country.oldest_attempt), get_datestamp(country.newest_attempt), get_number_of_days(country.newest_attempt, country.oldest_attempt)))
 
 sys.stdout.close()
 
@@ -368,13 +355,11 @@ if len(cfile) > 0:
     show_output("Writing CSV file: %s" % cfile)
 
     sys.stdout = open(cfile, "w")
-    print "\"DATE\",\"COUNTRY\",\"IP ADDRESS\""
-    for country in sorted(DETAILS.keys()):
-        country_details = DETAILS.get(country)
-        for address in country_details.sorted_addresses:
-            address_details = country_details.for_address(address)
-            for detail in address_details.attempts_sorted_by_date:
-                print "\"%s\",\"%s\",\"%s\"" % (get_timestamp(detail[0]), country, address)
+    print("\"DATE\",\"COUNTRY\",\"IP ADDRESS\"")
+    for country in Country.by_name():
+        for address in country.sorted_addresses:
+            for detail in address.attempts_sorted_by_date:
+                print("\"%s\",\"%s\",\"%s\"" % (get_timestamp(detail[0]), country, address))
     sys.stdout.close()
     sys.stdout = old_stdout
 
@@ -382,10 +367,10 @@ if len(tfile) > 0:
     show_output("Writing totals file: %s" % tfile)
 
     sys.stdout = open(tfile, "w")
-    print "\"DATE\",\"ATTEMPTS\""
+    print("\"DATE\",\"ATTEMPTS\"")
     for date in sorted(TOTALS.keys()):
         record = TOTALS.get(date)
-        print "\"%s\",\"%s\"" % (date, record)
+        print("\"%s\",\"%s\"" % (date, record))
     sys.stdout.close()
     sys.stdout = old_stdout
 
