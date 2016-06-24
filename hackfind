@@ -6,6 +6,89 @@ import getopt, sys
 import re
 import GeoIP
 
+class Country:
+    """Represents a single country."""
+
+    __instances = []
+    __by_name = {}
+
+    def __init__(self, name):
+        self.__name = name
+        self.__addresses = {}
+        # keep track of all instances
+        Country.__instances.append(self)
+        Country.__by_name[name] = self
+
+    def add_address(self, address):
+        self.__addresses[address.address] = address
+
+    @property
+    def name(self):
+        return self.__name if self.__name is not None else "Indeterminate"
+
+    @property
+    def raw_name(self):
+        return self.__name
+
+    @property
+    def total_addresses(self):
+        return len(self.__addresses)
+
+    def for_address(self, address):
+        return self.__addresses.get(address)
+
+    @property
+    def addresses(self):
+        return self.__addresses
+
+    @property
+    def sorted_addresses(self):
+        return sorted(self.__addresses.values(), key = lambda a: a.address)
+
+    @property
+    def oldest_attempt(self):
+        return self._find_access_date(oldest = True)
+
+    @property
+    def newest_attempt(self):
+        return self._find_access_date(oldest = False)
+
+    @property
+    def total_attempts(self):
+        return reduce(lambda x, y: x + y.total_attempts, self.__addresses.values(), 0)
+
+    @property
+    def attack_ratio(self):
+        return float(self.total_attempts) / float(self.total_addresses)
+
+    def _find_access_date(self, oldest):
+        result = None
+        for address in self.__addresses.values():
+            if oldest:
+                if result is None or address.oldest_attempt < result:
+                    result = address.oldest_attempt
+            else:
+                if result is None or address.latest_attempt > result:
+                    result = address.latest_attempt
+        return result[0]
+
+    @classmethod
+    def get_top_offenders(cls, size=5):
+        """Returns the top offenders, up to size in number."""
+        return sorted(cls.__instances, key = lambda a: a.total_attempts, reverse=True)[:size]
+
+    @classmethod
+    def get_instances(cls):
+        return cls.__instances
+
+    @classmethod
+    def for_name(cls, name):
+        return cls.__by_name.get(name)
+
+    @classmethod
+    def by_name(cls):
+        return sorted(cls.__instances, key = lambda a: a.name)
+
 class Address:
     """Represents a single IP address."""
 
@@ -92,7 +175,7 @@ def store_access_detail(geoip, source, when):
     # DETAILS[country] = {source => [when0, when1, ..., whenn]}
     country = DETAILS.get(geoip)
     if country is None:
-        country = {}
+        country = Country(geoip)
         DETAILS[geoip] = country
     address = country.for_address(source)
     if address is None:
@@ -226,11 +309,10 @@ if len(ofile) > 0:
 
 for country in sorted(DETAILS.keys()):
     access_by_country = 0
-    country_oldest = country_newest = None
     country_details = DETAILS.get(country)
-    print "===== COUNTRY: %s (total addresses found=%d)" % (country, len(country_details))
-    for address in sorted(country_details.keys()):
-        address_details = country_details.get(address)
+    print "===== COUNTRY: %s (total addresses found=%d)" % (country, country_details.total_addresses)
+    for address in sorted(country_details.sorted_addresses):
+        address_details = country_details.for_address(address)
         if address_details.total_attempts > single_most_attempts[0]:
             single_most_attempts = (address_details.total_attempts, address, country)
         address_oldest = address_details.oldest_attempt
@@ -245,22 +327,17 @@ for country in sorted(DETAILS.keys()):
         print "SOURCE ADDRESS  DATE OF ACCESS"
         print "=============== ==================="
         for detail in sorted(address_details.attempts):
-            detail = detail[0]
-            if oldest is None or detail < oldest:
-                oldest = detail
-            if country_oldest is None or detail < country_oldest:
-                country_oldest = detail
-            if newest is None or newest < detail:
-                newest = detail
-            if country_newest is None or country_newest < detail:
-                country_newest = detail
-            print "%15s %s" % (address, get_timestamp(detail))
+            if newest is None or detail[0] > newest:
+                newest = detail[0]
+            if oldest is None or detail[0] < oldest:
+                oldest = detail[0]
+            print "%15s %s" % (address, get_timestamp(detail[0]))
         access_count = access_count + address_details.total_attempts
         access_by_country = access_by_country + address_details.total_attempts
     if access_by_country > most_attempts[0]:
         most_attempts = (access_by_country, country)
     # update_top_offenders(top_offenders, access_by_country, country)
-    accesses.append((country, len(country_details), access_by_country, get_datestamp(country_oldest), get_datestamp(country_newest), get_number_of_days(country_newest, country_oldest)))
+    accesses.append((country, country_details.total_addresses, access_by_country, get_datestamp(country_details.oldest_attempt), get_datestamp(country_details.newest_attempt), get_number_of_days(country_details.newest_attempt, country_details.oldest_attempt)))
     print ""
     print "TOTAL ATTEMPTS: %d" % access_by_country
     print ""
@@ -294,8 +371,8 @@ if len(cfile) > 0:
     print "\"DATE\",\"COUNTRY\",\"IP ADDRESS\""
     for country in sorted(DETAILS.keys()):
         country_details = DETAILS.get(country)
-        for address in sorted(country_details.keys()):
-            address_details = country_details.get(address)
+        for address in country_details.sorted_addresses:
+            address_details = country_details.for_address(address)
             for detail in address_details.attempts_sorted_by_date:
                 print "\"%s\",\"%s\",\"%s\"" % (get_timestamp(detail[0]), country, address)
     sys.stdout.close()
