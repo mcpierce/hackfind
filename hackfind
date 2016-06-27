@@ -190,7 +190,7 @@ def store_access_detail(geoip, source, port, when):
     address.add_attempt(when, port)
 
     # if we're doing totals, then add them
-    if len(tfile) > 0:
+    if tfile is not None and len(tfile) > 0:
         date = get_month_and_year(when)
         record = TOTALS.get(date)
         if record is None:
@@ -402,7 +402,7 @@ if len(cfile) > 0:
     sys.stdout.close()
     sys.stdout = old_stdout
 
-if len(tfile) > 0:
+if tfile is not None and len(tfile) > 0:
     show_output("Writing totals file: %s" % tfile)
 
     sys.stdout = open(tfile, "w")
