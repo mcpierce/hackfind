@@ -161,6 +161,10 @@ def usage():
     print("  INFILE  - the router log file")
     print("  OUTFILE - the report file")
     print("\nOPTIONS:")
+    print("  -a, --allports     include all ports")
+    print("  -p, --port=[PORT]  include attempts that target PORT")
+    print(" --includeweb        include attempts to port 80, 443")
+    print(" --includep2p        include attempts to port 52017")
     print("  -v, --verbose      show verbose output (def. off)")
     print("  -h, --help         show this help information")
 
@@ -196,8 +200,6 @@ def store_access_detail(geoip, source, port, when):
         TOTALS[date] = record
 
 def get_access_source(line):
-    # return from any P2P access attempts
-    # if re.search(r':52017', line): return
     # first see if we have a datetime entry
     match = access_attempt_with_datetime_re.search(line)
     if match:
@@ -209,6 +211,12 @@ def get_access_source(line):
         source = match.group(1)
         port = int(match.group(2))
         when = default_datetime
+
+    # if the port isn't included then return
+    if not ALLPORTS and port not in include_ports:
+        verbose("Ignoring port %d" % port)
+        return
+
     # get the geoip information for the source
     geoip = GI.country_name_by_addr(source)
     store_access_detail(geoip, source, port, when)
@@ -244,12 +252,16 @@ include_p2p = False
 include_ports = [22]
 
 try:
-    opts, args = getopt.getopt(sys.argv[1:], "i:o:c:t:vdh",
+    opts, args = getopt.getopt(sys.argv[1:], "i:o:c:t:p:avdh",
                                [
                                    "input=",
                                    "output=",
                                    "totals=",
                                    "csv=",
+                                   "includeweb",
+                                   "includep2p",
+                                   "port=",
+                                   "allports",
                                    "verbose",
                                    "debug",
                                    "help"
@@ -262,6 +274,7 @@ except getopt.GetoptError as err:
 # define values
 DEBUG=False
 VERBOSE=False
+ALLPORTS=False
 
 for o, a in opts:
     if o == "-v":
@@ -279,8 +292,22 @@ for o, a in opts:
         cfile = a
     elif o in ("-t", "--totals"):
         tfile = a
+    elif o in ("--includeweb"):
+        include_web = True
+    elif o in ("--includep2p"):
+        include_p2p = True
+    elif o in ("-p", "--port"):
+        include_ports.append(int(a))
+    elif o in ("-a", "--allports"):
+        ALLPORTS = True
     else:
         assert False, "invalid option: %s" % o
+
+if include_web:
+    include_ports.append(80)
+    include_ports.append(443)
+if include_p2p:
+    include_ports.append(52017)
 
 verbose("USING: ifile=%s" % ifile)
 
