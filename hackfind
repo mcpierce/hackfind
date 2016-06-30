@@ -275,6 +275,7 @@ except getopt.GetoptError as err:
 DEBUG=False
 VERBOSE=False
 ALLPORTS=False
+CREATE_CVS_FILE=False
 
 for o, a in opts:
     if o == "-v":
@@ -290,6 +291,7 @@ for o, a in opts:
         ofile = a
     elif o in ("-c", "--csv"):
         cfile = a
+        CREATE_CVS_FILE = True
     elif o in ("-t", "--totals"):
         tfile = a
     elif o in ("--includeweb"):
@@ -390,7 +392,7 @@ sys.stdout.close()
 
 sys.stdout = old_stdout
 
-if len(cfile) > 0:
+if CREATE_CVS_FILE:
     show_output("Writing CSV file: %s" % cfile)
 
     sys.stdout = open(cfile, "w")
