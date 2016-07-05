@@ -350,7 +350,7 @@ try:
                                [
                                    "input=",
                                    "output=",
-                                   "totals=",
+                                   "totals",
                                    "csv=",
                                    "includeweb",
                                    "includep2p",
