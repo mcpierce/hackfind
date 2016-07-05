@@ -17,12 +17,18 @@ class Country:
     def __init__(self, name):
         self.__name = name
         self.__addresses = {}
+        self.__by_block = {}
         # keep track of all instances
         Country.__instances.append(self)
         Country.__by_name[name] = self
 
     def add_address(self, address):
         self.__addresses[address.address] = address
+        block = self.__by_block.get(address.address_block)
+        if block is None:
+            block = {}
+            self.__by_block[address.address_block] = block
+        block[address.address] = address
 
     @property
     def name(self):
@@ -35,6 +41,14 @@ class Country:
     @property
     def total_addresses(self):
         return len(self.__addresses)
+
+    @property
+    def total_address_blocks(self):
+        return len(self.__by_block.keys())
+
+    @property
+    def address_blocks(self):
+        return self.__by_block
 
     def for_address(self, address):
         return self.__addresses.get(address)
@@ -103,6 +117,10 @@ class Address:
 
     def add_attempt(self, date, port):
         self.__attempts.append([date, port])
+
+    @property
+    def address_block(self):
+        return self.__address[:self.__address.rfind(".")]
 
     @property
     def address(self):
@@ -270,8 +288,20 @@ def generate_full_access_report():
   
     for country in Country.by_name():
         print("COUNTRY: %s" % country.name)
-        print("         Total addresses..: %d" % country.total_addresses)
-        print("         Total attempts...: %d" % country.total_attempts)
+        print("         Total addresses........: %d" % country.total_addresses)
+        print("         Total attempts.........: %d" % country.total_attempts)
+        if GROUP_ADDRESSES and country.total_address_blocks > 1:
+            print("")
+            print("Total address blocks...: %d" % country.total_address_blocks)
+            print("   BLOCK     # ADDR  # HITS")
+            print("===========  ======  ======")
+            for block in country.address_blocks.keys():
+                total_attempts = 0
+                for address in country.address_blocks[block].values():
+                    total_attempts = total_attempts + address.total_attempts
+                print("%11s  %6d  %6d" %(block,
+                                         len(country.address_blocks[block].values()),
+                                         total_attempts))
         print("")
         for address in sorted(country.sorted_addresses):
             address_oldest = address.oldest_attempt
@@ -346,11 +376,12 @@ include_p2p = False
 include_ports = [22]
 
 try:
-    opts, args = getopt.getopt(sys.argv[1:], "i:o:c:tp:avdh",
+    opts, args = getopt.getopt(sys.argv[1:], "i:o:c:tgp:avdh",
                                [
                                    "input=",
                                    "output=",
                                    "totals",
+                                   "group",
                                    "csv=",
                                    "includeweb",
                                    "includep2p",
@@ -371,6 +402,7 @@ VERBOSE=False
 ALLPORTS=False
 CREATE_CVS_FILE=False
 TOTALS_ONLY=False
+GROUP_ADDRESSES=False
 
 for o, a in opts:
     if o == "-v":
@@ -389,6 +421,8 @@ for o, a in opts:
         CREATE_CVS_FILE = True
     elif o in ("-t", "--totals"):
         TOTALS_ONLY = True
+    elif o in ("-g", "--group"):
+        GROUP_ADDRESSES = True
     elif o in ("--includeweb"):
         include_web = True
     elif o in ("--includep2p"):
