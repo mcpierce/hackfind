@@ -70,8 +70,8 @@ class Country:
                 if result is None or address.oldest_attempt < result:
                     result = address.oldest_attempt
             else:
-                if result is None or address.latest_attempt > result:
-                    result = address.latest_attempt
+                if result is None or address.newest_attempt > result:
+                    result = address.newest_attempt
         return result[0]
 
     @classmethod
@@ -114,7 +114,7 @@ class Address:
         return sorted(self.__attempts)[0]
 
     @property
-    def latest_attempt(self):
+    def newest_attempt(self):
         return sorted(self.__attempts)[-1]
 
     @property
@@ -256,7 +256,7 @@ def generate_full_access_report():
         print("")
         for address in sorted(country.sorted_addresses):
             address_oldest = address.oldest_attempt
-            address_newest = address.latest_attempt
+            address_newest = address.newest_attempt
             if get_number_of_days(address_newest[0], address_oldest[0]) > longest_running_attempts[0]:
                 longest_running_attempts = (get_number_of_days(address_newest[0], address_oldest[0]),
                                             address.total_attempts, address, country,
