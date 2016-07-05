@@ -94,9 +94,12 @@ class Country:
 class Address:
     """Represents a single IP address."""
 
+    __instances = []
+
     def __init__(self, address):
         self.__address = address
         self.__attempts = [] # (date, port)
+        Address.__instances.append(self)
 
     def add_attempt(self, date, port):
         self.__attempts.append([date, port])
@@ -124,6 +127,22 @@ class Address:
     @property
     def attempts_sorted_by_date(self):
         return sorted(self.__attempts, key=lambda attempt: attempt[0])
+
+    @classmethod
+    def overall_oldest_attempt(cls):
+        result = None
+        for address in cls.__instances:
+            if result is None or address.oldest_attempt[0] < result:
+                result = address.oldest_attempt[0]
+        return result
+
+    @classmethod
+    def overall_newest_attempt(cls):
+        result = None
+        for address in cls.__instances:
+            if result is None or address.newest_attempt[0] > result:
+                result = address.newest_attempt[0]
+        return result
 
 GI = GeoIP.new(GeoIP.GEOIP_MEMORY_CACHE)
 TOTALS = {}
