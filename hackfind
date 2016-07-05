@@ -286,7 +286,7 @@ def generate_full_access_report():
             print("  DATE OF ACCESS    PORT#    DATE OF ACCESS    PORT#    DATE OF ACCESS    PORT#")
             print("=================== =====  =================== =====  =================== =====")
             which = 0
-            for attempt in address.attempts:
+            for attempt in sorted(address.attempts):
                 if which in [1, 2]:
                     print("  ", end='')
                 print("%19s %5d" % (get_timestamp(attempt[0]), attempt[1]), end='')
@@ -294,6 +294,7 @@ def generate_full_access_report():
                 if which is 3:
                     print("")
                     which = 0
+            print("")
         print("")
         print("")
         print("")
