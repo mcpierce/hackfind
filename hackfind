@@ -183,7 +183,7 @@ def get_month_and_year(timestamp):
     return datetime.fromtimestamp(int(timestamp)).strftime("%m/%Y")
 
 def get_number_of_days(newest, oldest):
-    return (datetime.utcfromtimestamp(newest) - datetime.utcfromtimestamp(oldest)).days
+    return (datetime.utcfromtimestamp(newest) - datetime.utcfromtimestamp(oldest)).days + 1
 
 def show_output(text):
     print("%s | %s" % (get_timestamp(time.time()), text))
