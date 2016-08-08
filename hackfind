@@ -5,6 +5,7 @@ from __future__ import print_function
 import time
 from datetime import datetime
 import getopt, sys
+import socket
 import re
 import GeoIP
 
@@ -282,6 +283,12 @@ def update_top_offenders(top_offenders_list, count, country):
             current = current - 1
         print("Inserting %s at %d" % (country, index))
         top_offenders_list[index] = [count, country]
+
+def lookup_hostname(address):
+    try:
+        return socket.gethostbyaddr(address)[1]
+    except socket.herror:
+        return "Unknown"
       
 def generate_full_access_report():
     longest_running_attempts = [0, None, None, None, None]
@@ -313,6 +320,7 @@ def generate_full_access_report():
                                             get_datestamp(address_newest[0]))
             print("")
             print("IP ADDRESS: %s [%d attempt(s)] from %s to %s" % (address.address, address.total_attempts, get_datestamp(address_oldest[0]), get_datestamp(address_newest[0])))
+            if HOSTNAMES: print("  HOSTNAME: %s" % lookup_hostname(address.address))
             print("  DATE OF ACCESS    PORT#    DATE OF ACCESS    PORT#    DATE OF ACCESS    PORT#")
             print("=================== =====  =================== =====  =================== =====")
             which = 0
@@ -376,7 +384,7 @@ include_p2p = False
 include_ports = [22]
 
 try:
-    opts, args = getopt.getopt(sys.argv[1:], "i:o:c:tgp:avdh",
+    opts, args = getopt.getopt(sys.argv[1:], "i:o:c:tgp:aHvdh",
                                [
                                    "input=",
                                    "output=",
@@ -387,6 +395,7 @@ try:
                                    "includep2p",
                                    "port=",
                                    "allports",
+                                   "hostname",
                                    "verbose",
                                    "debug",
                                    "help"
@@ -400,6 +409,7 @@ except getopt.GetoptError as err:
 DEBUG=False
 VERBOSE=False
 ALLPORTS=False
+HOSTNAMES=False
 CREATE_CVS_FILE=False
 TOTALS_ONLY=False
 GROUP_ADDRESSES=False
@@ -431,6 +441,8 @@ for o, a in opts:
         include_ports.append(int(a))
     elif o in ("-a", "--allports"):
         ALLPORTS = True
+    elif o in ("-H", "--hostnames"):
+        HOSTNAMES = True
     else:
         assert False, "invalid option: %s" % o
 
