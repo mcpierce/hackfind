@@ -1,0 +1,122 @@
+#!/usr/bin/env python
+#
+# Copyright (C) 2016 Darryl L. Pierce <mcpierce@gmail.com>
+#
+# This program is free software: you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
+#
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with this program.  If not, see <http://www.gnu.org/licenses/>.
+
+from __future__ import print_function
+
+import getopt, sys
+from hackfind import *
+
+def usage():
+    print("USAGE: hackfind -i INFILE -o OUTFILE OPTIONS\n")
+    print("  INFILE  - the router log file")
+    print("  OUTFILE - the report file")
+    print("\nOPTIONS:")
+    print("  -a, --allports     include all ports")
+    print("  -p, --port=[PORT]  include attempts that target PORT")
+    print(" --includeweb        include attempts to port 80, 443")
+    print(" --includep2p        include attempts to port 52017")
+    print(" --totals            only report totals")
+    print("  -h, --help         show this help information")
+
+ofile = cfile = tfile = None
+include_web = False
+include_p2p = False
+include_ports = [22]
+
+try:
+    opts, args = getopt.getopt(sys.argv[1:], "i:o:c:tgp:aHdh",
+                               [
+                                   "input=",
+                                   "output=",
+                                   "totals",
+                                   "group",
+                                   "csv=",
+                                   "includeweb",
+                                   "includep2p",
+                                   "port=",
+                                   "allports",
+                                   "hostname",
+                                   "help"
+                               ])
+except getopt.GetoptError as err:
+    print(str(err))
+    usage()
+    sys.exit(2)
+
+# define values
+ALLPORTS=False
+HOSTNAMES=False
+CREATE_CVS_FILE=False
+TOTALS_ONLY=False
+GROUP_ADDRESSES=False
+
+for o, a in opts:
+    if o in ("-h", "--help"):
+        usage()
+        sys.exit(0)
+    elif o in ("-i", "--input"):
+        ifile = a
+    elif o in ("-o", "--output"):
+        ofile = a
+    elif o in ("-c", "--csv"):
+        cfile = a
+        CREATE_CVS_FILE = True
+    elif o in ("-t", "--totals"):
+        TOTALS_ONLY = True
+    elif o in ("-g", "--group"):
+        GROUP_ADDRESSES = True
+    elif o in ("--includeweb"):
+        include_web = True
+    elif o in ("--includep2p"):
+        include_p2p = True
+    elif o in ("-p", "--port"):
+        include_ports.append(int(a))
+    elif o in ("-a", "--allports"):
+        ALLPORTS = True
+    elif o in ("-H", "--hostnames"):
+        HOSTNAMES = True
+    else:
+        assert False, "invalid option: %s" % o
+
+if include_web:
+    include_ports.append(80)
+    include_ports.append(443)
+if include_p2p:
+    include_ports.append(52017)
+
+if len(ifile) == 0:
+    die("missing or invalid filename: %s" % ifile)
+
+# the ifile is read and processed into a hash
+#
+# the key is the source IP address
+# the value an array
+#
+# the value array has two elements:
+# * the country of origin for the IP address, and
+# * the date and time of the access attempt
+
+results = {}
+
+with open(ifile) as f:
+    lines = f.readlines()
+    for line in lines:
+        process_line(line, totals = (tfile is not None and len(tfile) > 0))
+
+generate_totals_report(ofile, TOTALS_ONLY, GROUP_ADDRESSES, HOSTNAMES)
+if CREATE_CVS_FILE: generate_cvs_report()
+
