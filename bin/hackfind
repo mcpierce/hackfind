@@ -18,7 +18,7 @@
 from __future__ import print_function
 
 import getopt, sys
-from hackfind import *
+from hackfind import Model
 
 def usage():
     print("USAGE: hackfind -i INFILE -o OUTFILE OPTIONS\n")
@@ -101,22 +101,15 @@ if include_p2p:
 if len(ifile) == 0:
     die("missing or invalid filename: %s" % ifile)
 
-# the ifile is read and processed into a hash
+model = Model(ifile, ofile)
+
+model.process_input()
+
+#with open(ifile) as f:
+#    lines = f.readlines()
+#    for line in lines:
+#        process_line(line, totals = (tfile is not None and len(tfile) > 0))
 #
-# the key is the source IP address
-# the value an array
-#
-# the value array has two elements:
-# * the country of origin for the IP address, and
-# * the date and time of the access attempt
-
-results = {}
-
-with open(ifile) as f:
-    lines = f.readlines()
-    for line in lines:
-        process_line(line, totals = (tfile is not None and len(tfile) > 0))
-
-generate_totals_report(ofile, TOTALS_ONLY, GROUP_ADDRESSES, HOSTNAMES)
-if CREATE_CVS_FILE: generate_cvs_report()
+#generate_totals_report(ofile, TOTALS_ONLY, GROUP_ADDRESSES, HOSTNAMES)
+#if CREATE_CVS_FILE: generate_cvs_report()
 
