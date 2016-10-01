@@ -16,6 +16,8 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 from log_line import LogLine
+from address import Address
+from address_block import AddressBlock
 
 class Model:
     """Holds a reference to the details of a set of log file."""
@@ -26,6 +28,11 @@ class Model:
         """
         self._ifile = ifile
         self._ofile = ofile
+        self._address_block = AddressBlock()
+
+    @property
+    def address_block(self):
+        return self._address_block
 
     def process_input(self):
         """
@@ -41,13 +48,14 @@ class Model:
         """
         Tracks a new attempt at accessing the network.
         """
-        pass
+        address = Address.for_source(source)
+        self._address_block.add_address(address)
+        address.add_attempt(when, port)
 
     def get_default_timestamp(self):
         return self.__default_timestamp
 
     def set_default_timestamp(self, timestamp):
         self.__default_timestamp = timestamp
-        print("New default timestamp: %s" % timestamp)
 
     timestamp = property(get_default_timestamp, set_default_timestamp)

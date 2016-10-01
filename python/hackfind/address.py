@@ -18,19 +18,40 @@
 class Address:
     """Represents a single IP address."""
 
-    __instances = []
+    __instances = {}
 
     def __init__(self, address):
         self.__address = address
-        self.__attempts = [] # (date, port)
-        Address.__instances.append(self)
+        self.__attempts_by_port = {}
+        self.__attempts = []
+
+    def __repr__(self):
+        return self.__str__()
+
+    def __str__(self):
+        return "%s (attempts=%d)" % (self.__address, len(self.__attempts))
+
+    @classmethod
+    def for_source(cls, address):
+        """
+        Returns an instance for the specified class. If no such instance
+        exists then it creates a new one and returns it.
+        """
+        if cls.__instances.has_key(address):
+            result = cls.__instances[address]
+        else:
+            result = Address(address)
+            cls.__instances[address] = result
+        return result
 
     def add_attempt(self, date, port):
-        self.__attempts.append([date, port])
-
-    @property
-    def address_block(self):
-        return self.__address[:self.__address.rfind(".")]
+        self.__attempts.append(date)
+        if self.__attempts_by_port.has_key(port):
+            attempts = self.__attempts_by_port[port]
+        else:
+            attempts = []
+            self.__attempts_by_port[port] = attempts
+        attempts.append(date)
 
     @property
     def address(self):
