@@ -18,7 +18,7 @@
 from __future__ import print_function
 
 import getopt, sys
-from hackfind import Model
+from hackfind import Model, Report
 
 def usage():
     print("USAGE: hackfind -i INFILE -o OUTFILE OPTIONS\n")
@@ -32,7 +32,7 @@ def usage():
     print(" --totals            only report totals")
     print("  -h, --help         show this help information")
 
-ofile = cfile = tfile = None
+ofile = cfile = ""
 include_web = False
 include_p2p = False
 include_ports = [22]
@@ -101,15 +101,8 @@ if include_p2p:
 if len(ifile) == 0:
     die("missing or invalid filename: %s" % ifile)
 
-model = Model(ifile, ofile)
-
+model = Model(ifile)
 model.process_input()
 
-#with open(ifile) as f:
-#    lines = f.readlines()
-#    for line in lines:
-#        process_line(line, totals = (tfile is not None and len(tfile) > 0))
-#
-#generate_totals_report(ofile, TOTALS_ONLY, GROUP_ADDRESSES, HOSTNAMES)
-#if CREATE_CVS_FILE: generate_cvs_report()
-
+report = Report(ofile)
+report.write_output(model)

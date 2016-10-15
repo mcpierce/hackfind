@@ -34,9 +34,9 @@ class AddressBlock:
             self.__all.append(address)
             # break down the address and add it to the tree
             one, two, three, four = address.address.split(".")
-            self.__piecewise_add(address, one, two, three)
+            self.__piecewise_add(address, one, two, three, four)
 
-    def __piecewise_add(self, address, one, two, three):
+    def __piecewise_add(self, address, one, two, three, four):
         if self.__root.has_key(one):
             first = self.__root[one]
         else:
@@ -52,8 +52,14 @@ class AddressBlock:
         if second.has_key(three):
             third = second[three]
         else:
-            third = []
+            third = {}
             second[three] = third
 
-        if address not in third:
-            third.append(address)
+        if third.has_key(four):
+            fourth = third[four]
+        else:
+            fourth = []
+            third[four] = fourth
+        
+        if address not in fourth:
+            fourth.append(address)

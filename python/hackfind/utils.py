@@ -1,4 +1,4 @@
-#  __init__.py
+# utils.py
 # Copyright (C) 2016 Darryl L. Pierce <mcpierce@gmail.com>
 #
 # This program is free software: you can redistribute it and/or modify
@@ -14,5 +14,10 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-from model import Model
-from report import Report
+from datetime import datetime
+
+def convert_month_first(text):
+    return time.mktime(datetime.strptime(text, "%B %d, %Y %H:%M:%S").timetuple())
+
+def get_timestamp(timestamp):
+    return datetime.fromtimestamp(int(timestamp)).strftime("%m/%d/%Y %H:%M:%S")

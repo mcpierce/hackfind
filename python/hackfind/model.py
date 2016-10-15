@@ -22,17 +22,19 @@ from address_block import AddressBlock
 class Model:
     """Holds a reference to the details of a set of log file."""
 
-    def __init__(self, ifile, ofile):
+    def __init__(self, ifile):
         """
         Create a new instance based on the contents of the supplied file.
         """
         self._ifile = ifile
-        self._ofile = ofile
-        self._address_block = AddressBlock()
+        self.__countries = {}
 
     @property
-    def address_block(self):
-        return self._address_block
+    def country_names(self):
+        return self.__countries.keys()
+
+    def get_country(self, name):
+        return self.__countries[name]
 
     def process_input(self):
         """
@@ -49,7 +51,9 @@ class Model:
         Tracks a new attempt at accessing the network.
         """
         address = Address.for_source(source)
-        self._address_block.add_address(address)
+        if not self.__countries.has_key(address.country.name):
+            print("Added country: %s" % address.country.name)
+            self.__countries[address.country.name] = address.country
         address.add_attempt(when, port)
 
     def get_default_timestamp(self):

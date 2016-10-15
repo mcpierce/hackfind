@@ -15,6 +15,8 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
+from address_block import AddressBlock
+
 class Country:
     """Represents a single country."""
 
@@ -23,19 +25,13 @@ class Country:
 
     def __init__(self, name):
         self.__name = name
-        self.__addresses = {}
-        self.__by_block = {}
+        self.__address_block = AddressBlock()
         # keep track of all instances
         Country.__instances.append(self)
         Country.__by_name[name] = self
 
     def add_address(self, address):
-        self.__addresses[address.address] = address
-        block = self.__by_block.get(address.address_block)
-        if block is None:
-            block = {}
-            self.__by_block[address.address_block] = block
-        block[address.address] = address
+        self.__address_block.add_address(address)
 
     @property
     def name(self):
@@ -46,43 +42,8 @@ class Country:
         return self.__name
 
     @property
-    def total_addresses(self):
-        return len(self.__addresses)
-
-    @property
-    def total_address_blocks(self):
-        return len(self.__by_block.keys())
-
-    @property
-    def address_blocks(self):
-        return self.__by_block
-
-    def for_address(self, address):
-        return self.__addresses.get(address)
-
-    @property
-    def addresses(self):
-        return self.__addresses
-
-    @property
-    def sorted_addresses(self):
-        return sorted(self.__addresses.values(), key = lambda a: a.address)
-
-    @property
-    def oldest_attempt(self):
-        return self._find_access_date(oldest = True)
-
-    @property
-    def newest_attempt(self):
-        return self._find_access_date(oldest = False)
-
-    @property
-    def total_attempts(self):
-        return reduce(lambda x, y: x + y.total_attempts, self.__addresses.values(), 0)
-
-    @property
-    def attack_ratio(self):
-        return float(self.total_attempts) / float(self.total_addresses)
+    def address_block(self):
+        return self.__address_block.root
 
     def _find_access_date(self, oldest):
         result = None
@@ -96,18 +57,7 @@ class Country:
         return result[0]
 
     @classmethod
-    def get_top_offenders(cls, size=5):
-        """Returns the top offenders, up to size in number."""
-        return sorted(cls.__instances, key = lambda a: a.total_attempts, reverse=True)[:size]
-
-    @classmethod
-    def get_instances(cls):
-        return cls.__instances
-
-    @classmethod
     def for_name(cls, name):
+        if not cls.__by_name.has_key(name):
+            cls.__by_name[name] = Country(name)
         return cls.__by_name.get(name)
-
-    @classmethod
-    def by_name(cls):
-        return sorted(cls.__instances, key = lambda a: a.name)
