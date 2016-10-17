@@ -27,42 +27,24 @@ def usage():
     print("\nOPTIONS:")
     print("  -a, --allports     include all ports")
     print("  -p, --port=[PORT]  include attempts that target PORT")
-    print(" --includeweb        include attempts to port 80, 443")
-    print(" --includep2p        include attempts to port 52017")
     print(" --totals            only report totals")
     print("  -h, --help         show this help information")
 
 ofile = cfile = ""
-include_web = False
-include_p2p = False
 include_ports = [22]
 
 try:
-    opts, args = getopt.getopt(sys.argv[1:], "i:o:c:tgp:aHdh",
+    opts, args = getopt.getopt(sys.argv[1:], "i:o:tp:h",
                                [
                                    "input=",
                                    "output=",
-                                   "totals",
-                                   "group",
-                                   "csv=",
-                                   "includeweb",
-                                   "includep2p",
                                    "port=",
-                                   "allports",
-                                   "hostname",
                                    "help"
                                ])
 except getopt.GetoptError as err:
     print(str(err))
     usage()
     sys.exit(2)
-
-# define values
-ALLPORTS=False
-HOSTNAMES=False
-CREATE_CVS_FILE=False
-TOTALS_ONLY=False
-GROUP_ADDRESSES=False
 
 for o, a in opts:
     if o in ("-h", "--help"):
@@ -72,31 +54,10 @@ for o, a in opts:
         ifile = a
     elif o in ("-o", "--output"):
         ofile = a
-    elif o in ("-c", "--csv"):
-        cfile = a
-        CREATE_CVS_FILE = True
-    elif o in ("-t", "--totals"):
-        TOTALS_ONLY = True
-    elif o in ("-g", "--group"):
-        GROUP_ADDRESSES = True
-    elif o in ("--includeweb"):
-        include_web = True
-    elif o in ("--includep2p"):
-        include_p2p = True
     elif o in ("-p", "--port"):
         include_ports.append(int(a))
-    elif o in ("-a", "--allports"):
-        ALLPORTS = True
-    elif o in ("-H", "--hostnames"):
-        HOSTNAMES = True
     else:
         assert False, "invalid option: %s" % o
-
-if include_web:
-    include_ports.append(80)
-    include_ports.append(443)
-if include_p2p:
-    include_ports.append(52017)
 
 if len(ifile) == 0:
     die("missing or invalid filename: %s" % ifile)
