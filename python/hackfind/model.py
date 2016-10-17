@@ -28,13 +28,22 @@ class Model:
         """
         self._ifile = ifile
         self.__countries = {}
+        self.__included_ports = []
+        self.__ignored_ports = []
 
     @property
     def country_names(self):
         return self.__countries.keys()
 
+    @property
+    def ignroed_ports(self):
+        return self.__ignored_ports
+
     def get_country(self, name):
         return self.__countries[name]
+
+    def set_included_ports(self, ports):
+        self.__included_ports = ports
 
     def process_input(self):
         """
@@ -50,11 +59,15 @@ class Model:
         """
         Tracks a new attempt at accessing the network.
         """
-        address = Address.for_source(source)
-        if not self.__countries.has_key(address.country.name):
-            print("Added country: %s" % address.country.name)
-            self.__countries[address.country.name] = address.country
-        address.add_attempt(when, port)
+        # only process ports we're tracking
+        if port in self.__included_ports:
+            address = Address.for_source(source)
+            if not self.__countries.has_key(address.country.name):
+                print("Added country: %s" % address.country.name)
+                self.__countries[address.country.name] = address.country
+            address.add_attempt(when, port)
+        elif port not in self.__ignored_ports:
+            self.__ignored_ports.append(port)
 
     def get_default_timestamp(self):
         return self.__default_timestamp

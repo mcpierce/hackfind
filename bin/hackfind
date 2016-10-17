@@ -31,7 +31,7 @@ def usage():
     print("  -h, --help         show this help information")
 
 ofile = cfile = ""
-include_ports = [22]
+include_ports = []
 
 try:
     opts, args = getopt.getopt(sys.argv[1:], "i:o:tp:h",
@@ -59,10 +59,15 @@ for o, a in opts:
     else:
         assert False, "invalid option: %s" % o
 
+# if no port was specified, then assume only SSH
+if len(include_ports) == 0:
+    include_ports.append(22)
+
 if len(ifile) == 0:
     die("missing or invalid filename: %s" % ifile)
 
 model = Model(ifile)
+model.set_included_ports(include_ports)
 model.process_input()
 
 report = Report(ofile)
