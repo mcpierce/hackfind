@@ -49,38 +49,30 @@ class Report:
             print("Country: %s" % country.name)
             total_addresses = 0
             total_attacks = 0
-            for one_key in sorted(country.address_block):
-                one = country.address_block[one_key]
-                for two_key in sorted(one.iterkeys()):
-                    two = one[two_key]
+            for top_level_key in sorted(country.address_block):
+                top_level = country.address_block[top_level_key]
+                for bottom_key in sorted(top_level.iterkeys()):
+                    bottom = top_level[bottom_key]
                     print("")
-                    print("         Address block: %s.%s.*.*" % (one_key, two_key))
-                    for three_key in sorted(two.iterkeys()):
-                        three = two[three_key]
-                        for four_key in sorted(three.iterkeys()):
-                            four = three[four_key]
-                            print("    ADDRESS      PORT      DATE/TIME          ADDRESS      PORT      DATE/TIME")
-                            print("=============== ===== =================== =============== ===== ===================")
-                            for address in four:
-                                total_addresses = total_addresses + 1
-                                for port in sorted(address.ports_targeted):
-                                    attempts = address.attempts_for_port(port)
-                                    total_attacks = total_attacks + len(attempts)
-                                    rows = (len(attempts) + 1) / 2
-                                    for row in range(0, rows):
-                                        line = self.__create_line(address.address,
-                                                                  port,
-                                                                  attempts[row])
-                                        if (row + rows) < len(attempts):
-                                            line = "%s %s" % (line,
-                                                              self.__create_line(address.address,
-                                                                                 port,
-                                                                                 attempts[row + rows]))
-                                        print(line)
-                                        print("===================================================================================")
-                                        print("Statistics for %s:" % country.name)
-                                        print("    Total addresses...: %d" % total_addresses)
-                                        print("    Total attempts....: %d" % total_attacks)
-                                        print("    Attack ratio......: %.3f" % (float(total_attacks) / float(total_addresses)))
-                                        print("")
+                    print("Network block: %s.%s.*" % (top_level_key, bottom_key))
+                    print("")
+                    print("    ADDRESS      PORT      DATE/TIME          ADDRESS      PORT      DATE/TIME")
+                    print("=============== ===== =================== =============== ===== ===================")
+                    for address in bottom:
+                        total_addresses = total_addresses + 1
+                        for port in sorted(address.ports_targeted):
+                            attempts = address.attempts_for_port(port)
+                            total_attacks = total_attacks + len(attempts)
+                            rows = (len(attempts) + 1) / 2
+                            for row in range(0, rows):
+                                output = self.__create_line(address.address, port, attempts[row])
+                                if (row + rows) < len(attempts):
+                                    output = "%s %s" % (output, self.__create_line(address.address, port, attempts[row + rows]))
+                                print(output)
+            print("===================================================================================")
+            print("Statistics for %s:" % country.name)
+            print("    Total addresses...: %d" % total_addresses)
+            print("    Total attempts....: %d" % total_attacks)
+            print("    Attack ratio......: %.3f" % (float(total_attacks) / float(total_addresses)))
+            print("")
 

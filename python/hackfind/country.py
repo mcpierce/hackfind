@@ -33,6 +33,9 @@ class Country:
     def add_address(self, address):
         self.__address_block.add_address(address)
 
+    def remove_address(self, address):
+        self.__address_block.remove_address(address)
+
     @property
     def name(self):
         return self.__name if self.__name is not None else "Indeterminate"

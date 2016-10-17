@@ -36,30 +36,25 @@ class AddressBlock:
             one, two, three, four = address.address.split(".")
             self.__piecewise_add(address, one, two, three, four)
 
+    def remove_address(self, address):
+        if address in self.__all:
+            self.__all.remove(address)
+            # iterate through all 
+
     def __piecewise_add(self, address, one, two, three, four):
-        if self.__root.has_key(one):
-            first = self.__root[one]
-        else:
-            first = {}
-            self.__root[one] = first
+        top_key = "%s.%s" % (one, two)
 
-        if first.has_key(two):
-            second = first[two]
+        if self.__root.has_key(top_key):
+            top = self.__root[top_key]
         else:
-            second = {}
-            first[two] = second
+            top = {}
+            self.__root[top_key] = top
 
-        if second.has_key(three):
-            third = second[three]
+        if top.has_key(three):
+            bottom = top[three]
         else:
-            third = {}
-            second[three] = third
+            bottom = []
+            top[three] = bottom
 
-        if third.has_key(four):
-            fourth = third[four]
-        else:
-            fourth = []
-            third[four] = fourth
-        
-        if address not in fourth:
-            fourth.append(address)
+        if address not in bottom:
+            bottom.append(address)
