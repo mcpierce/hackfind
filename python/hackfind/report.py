@@ -60,15 +60,17 @@ class Report:
                     print("=============== ===== =================== =============== ===== ===================")
                     for address in bottom:
                         total_addresses = total_addresses + 1
-                        for port in sorted(address.ports_targeted):
-                            attempts = address.attempts_for_port(port)
-                            total_attacks = total_attacks + len(attempts)
-                            rows = (len(attempts) + 1) / 2
-                            for row in range(0, rows):
-                                output = self.__create_line(address.address, port, attempts[row])
-                                if (row + rows) < len(attempts):
-                                    output = "%s %s" % (output, self.__create_line(address.address, port, attempts[row + rows]))
-                                print(output)
+                        total_attacks = total_attacks + address.number_of_attempts
+                        rows = (len(address.attempts) + 1) / 2
+                        attempts = address.attempts_sorted_by_date
+                        for row in range(0, rows):
+                            output = self.__create_line(address.address, attempts[row].port, attempts[row].when)
+                            if (row + rows) < len(address.attempts):
+                                output = "%s %s" % (output,
+                                                    self.__create_line(address.address,
+                                                                       attempts[row + rows].port,
+                                                                       attempts[row + rows].when))
+                            print(output)
             print("===================================================================================")
             print("Statistics for %s:" % country.name)
             print("    Total addresses...: %d" % total_addresses)

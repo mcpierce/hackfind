@@ -16,6 +16,7 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 from country import Country
+from access_attempt import AccessAttempt
 
 import GeoIP
 
@@ -28,7 +29,7 @@ class Address:
 
     def __init__(self, address):
         self.__address = address
-        self.__attempts_by_port = {}
+        self.__attempts = []
         self.__country = Country.for_name(Address.GI.country_name_by_addr(address))
         self.__country.add_address(self)
 
@@ -52,12 +53,19 @@ class Address:
         return result
 
     def add_attempt(self, date, port):
-        if self.__attempts_by_port.has_key(port):
-            attempts = self.__attempts_by_port[port]
-        else:
-            attempts = []
-            self.__attempts_by_port[port] = attempts
-        attempts.append(date)
+        self.__attempts.append(AccessAttempt(port, date))
+
+    @property
+    def number_of_attempts(self):
+        return len(self.__attempts)
+
+    @property
+    def attempts(self):
+        return self.__attempts
+
+    @property
+    def attempts_sorted_by_date(self):
+        return sorted(self.__attempts, key=lambda x: (x.port, x.when))
 
     @property
     def address(self):
