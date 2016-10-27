@@ -21,16 +21,15 @@ import getopt, sys
 from hackfind import Model, Report
 
 def usage():
-    print("USAGE: hackfind -i INFILE -o OUTFILE OPTIONS\n")
+    print("USAGE: hackfind -i INFILE OPTIONS\n")
     print("  INFILE  - the router log file")
-    print("  OUTFILE - the report file")
     print("\nOPTIONS:")
     print("  -a, --allports     include all ports")
     print("  -p, --port=[PORT]  include attempts that target PORT")
     print(" --totals            only report totals")
     print("  -h, --help         show this help information")
 
-ofile = cfile = ""
+cfile = ""
 include_ports = []
 
 try:
@@ -52,8 +51,6 @@ for o, a in opts:
         sys.exit(0)
     elif o in ("-i", "--input"):
         ifile = a
-    elif o in ("-o", "--output"):
-        ofile = a
     elif o in ("-p", "--port"):
         include_ports.append(int(a))
     else:
@@ -69,6 +66,3 @@ if len(ifile) == 0:
 model = Model(ifile)
 model.set_included_ports(include_ports)
 model.process_input()
-
-report = Report(ofile)
-report.write_output(model)
