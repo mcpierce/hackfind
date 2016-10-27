@@ -49,10 +49,6 @@ class Country:
         return self.__name if self.__name is not None else "Indeterminate"
 
     @property
-    def raw_name(self):
-        return self.__name
-
-    @property
     def address_block(self):
         return self.__address_block.root
 

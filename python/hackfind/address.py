@@ -78,10 +78,3 @@ class Address:
     @property
     def country(self):
         return self.__country
-
-    @property
-    def ports_targeted(self):
-        return self.__attempts_by_port.keys()
-
-    def attempts_for_port(self, port):
-        return self.__attempts_by_port[port]

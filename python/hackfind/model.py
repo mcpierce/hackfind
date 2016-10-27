@@ -50,10 +50,6 @@ class Model:
     def attack_ratio_for_country(self, country):
         return float(country.total_attempts) / float(self.total_attempts)
 
-    @property
-    def ignroed_ports(self):
-        return self.__ignored_ports
-
     def get_country(self, name):
         return self.__countries[name]
 
