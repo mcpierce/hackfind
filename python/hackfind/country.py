@@ -33,8 +33,16 @@ class Country:
     def add_address(self, address):
         self.__address_block.add_address(address)
 
+    @property
+    def total_addresses(self):
+        return self.__address_block.total_addresses
+
     def remove_address(self, address):
         self.__address_block.remove_address(address)
+
+    @property
+    def total_attempts(self):
+        return self.__address_block.total_attempts
 
     @property
     def name(self):

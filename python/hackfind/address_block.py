@@ -36,6 +36,14 @@ class AddressBlock:
             one, two, three, four = address.address.split(".")
             self.__piecewise_add(address, one, two, three, four)
 
+    @property
+    def total_addresses(self):
+        return len(self.__all)
+
+    @property
+    def total_attempts(self):
+        return sum(addr.total_attempts for addr in self.__all)
+
     def remove_address(self, address):
         if address in self.__all:
             self.__all.remove(address)

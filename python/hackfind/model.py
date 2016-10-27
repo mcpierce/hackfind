@@ -36,6 +36,21 @@ class Model:
         return self.__countries.keys()
 
     @property
+    def sorted_countries(self):
+         return sorted(self.__countries.values(), key=lambda c: c.name)
+
+    @property
+    def total_attempts(self):
+        return sum(country.total_attempts for country in self.__countries.values())
+
+    @property
+    def total_addresses(self):
+        return sum(country.total_addresses for country in self.__countries.values())
+
+    def attack_ratio_for_country(self, country):
+        return float(country.total_attempts) / float(self.total_attempts)
+
+    @property
     def ignroed_ports(self):
         return self.__ignored_ports
 
@@ -63,7 +78,6 @@ class Model:
         if port in self.__included_ports:
             address = Address.for_source(source)
             if not self.__countries.has_key(address.country.name):
-                print("Added country: %s" % address.country.name)
                 self.__countries[address.country.name] = address.country
             address.add_attempt(when, port)
         elif port not in self.__ignored_ports:

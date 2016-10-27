@@ -1,0 +1,45 @@
+<html>
+  <head>
+  </head>
+  <body>
+
+    <table id="totals_by_country">
+      <thead>
+        <tr>
+          <th>Totals By Country</th>
+        </tr>
+        <tr>
+          <th>County Name</th>
+          <th># Addresses</th>
+          <th># Attempts</th>
+          <th>Ratio</th>
+        </tr>
+      </thead>
+
+      <tbody>
+
+        #foreach ($country in $model.sorted_countries)
+
+        <tr>
+          <td>$country.name</td>
+          <td>$country.total_addresses</td>
+          <td>$country.total_attempts</td>
+          <td>$model.attack_ratio_for_country($country)</td>
+        </tr>
+
+        #end
+
+      </tbody>
+
+      <tfoot>
+        <tr>
+	  <td />
+	  <td>$model.total_addresses</td>
+	  <td>$model.total_attempts</td>
+	  <td />
+	</tr>
+      </tfoot>
+
+    </table>
+  </body>
+</html>

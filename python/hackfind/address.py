@@ -39,6 +39,10 @@ class Address:
     def __str__(self):
         return self.__address
 
+    @property
+    def total_attempts(self):
+        return len(self.__attempts)
+
     @classmethod
     def for_source(cls, address):
         """

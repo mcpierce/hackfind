@@ -18,25 +18,28 @@
 from __future__ import print_function
 
 import getopt, sys
-from hackfind import Model, Report
+from hackfind import Model, Report, Template
 
 def usage():
     print("USAGE: hackfind -i INFILE OPTIONS\n")
     print("  INFILE  - the router log file")
     print("\nOPTIONS:")
-    print("  -a, --allports     include all ports")
-    print("  -p, --port=[PORT]  include attempts that target PORT")
-    print("  -h, --help         show this help information")
+    print("  -a, --allports         include all ports")
+    print("  -p, --port=[PORT]      include attempts that target PORT")
+    print("  -t, --template=[FILE]  runs the provided template")
+    print("  -h, --help             show this help information")
 
 cfile = ""
+template_name = ""
 include_ports = []
 
 try:
-    opts, args = getopt.getopt(sys.argv[1:], "i:o:tp:h",
+    opts, args = getopt.getopt(sys.argv[1:], "i:o:t:p:h",
                                [
                                    "input=",
                                    "output=",
                                    "port=",
+                                   "template=",
                                    "help"
                                ])
 except getopt.GetoptError as err:
@@ -52,6 +55,8 @@ for o, a in opts:
         ifile = a
     elif o in ("-p", "--port"):
         include_ports.append(int(a))
+    elif o in ("-t", "--template"):
+        template_name = a
     else:
         assert False, "invalid option: %s" % o
 
@@ -65,3 +70,7 @@ if len(ifile) == 0:
 model = Model(ifile)
 model.set_included_ports(include_ports)
 model.process_input()
+
+if len(template_name) > 0:
+    template = Template(template_name, model)
+    template.generate()
