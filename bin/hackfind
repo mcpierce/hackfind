@@ -26,7 +26,6 @@ def usage():
     print("\nOPTIONS:")
     print("  -a, --allports     include all ports")
     print("  -p, --port=[PORT]  include attempts that target PORT")
-    print(" --totals            only report totals")
     print("  -h, --help         show this help information")
 
 cfile = ""
