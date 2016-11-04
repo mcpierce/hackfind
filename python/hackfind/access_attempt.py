@@ -15,6 +15,8 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
+from utils import get_timestamp
+
 class AccessAttempt:
     def __init__(self, port, when):
         self.__port = port
@@ -27,3 +29,14 @@ class AccessAttempt:
     @property
     def when(self):
         return self.__when
+
+    def __eq__(self, other):
+        if isinstance(other, self.__class__):
+            return self.__dict__ == other.__dict__
+        return False
+
+    def __ne__(self, other):
+        return not self.__eq__(other)
+
+    def __str__(self):
+        return "Access attempt: port %d on %s" % (self.__port, get_timestamp(self.__when))
