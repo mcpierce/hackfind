@@ -16,6 +16,8 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 from log_line import LogLine
+from access_attempt import AccessAttempt
+from access_totals import AccessTotals
 from address import Address
 from address_block import AddressBlock
 
@@ -30,6 +32,7 @@ class Model:
         self.__countries = {}
         self.__included_ports = []
         self.__ignored_ports = []
+        self.__access_totals = AccessTotals()
 
     @property
     def country_names(self):
@@ -42,6 +45,10 @@ class Model:
     @property
     def total_attempts(self):
         return sum(country.total_attempts for country in self.__countries.values())
+
+    @property
+    def totals_by_date(self):
+        return self.__access_totals.get_totals_by_date()
 
     @property
     def total_addresses(self):
@@ -75,7 +82,8 @@ class Model:
             address = Address.for_source(source)
             if not self.__countries.has_key(address.country.name):
                 self.__countries[address.country.name] = address.country
-            address.add_attempt(when, port)
+            if address.add_attempt(when, port):
+                self.__access_totals.add_attempt(when, port)
         elif port not in self.__ignored_ports:
             self.__ignored_ports.append(port)
 

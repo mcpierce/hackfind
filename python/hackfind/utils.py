@@ -21,3 +21,9 @@ def convert_month_first(text):
 
 def get_timestamp(timestamp):
     return datetime.fromtimestamp(int(timestamp)).strftime("%m/%d/%Y %H:%M:%S")
+
+def get_datestamp(timestamp):
+    return datetime.fromtimestamp(int(timestamp)).strftime("%m/%d/%Y")
+
+def get_monthstamp(timestamp):
+    return datetime.fromtimestamp(int(timestamp)).strftime("%m/%Y")

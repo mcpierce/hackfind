@@ -60,6 +60,8 @@ class Address:
         attempt = AccessAttempt(port, date)
         if not attempt in self.__attempts:
             self.__attempts.append(attempt)
+            return True
+        return False
 
     @property
     def number_of_attempts(self):

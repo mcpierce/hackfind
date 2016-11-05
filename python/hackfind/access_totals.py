@@ -1,4 +1,4 @@
-#  __init__.py
+#  access_totals.py
 # Copyright (C) 2016 Darryl L. Pierce <mcpierce@gmail.com>
 #
 # This program is free software: you can redistribute it and/or modify
@@ -14,7 +14,19 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-from model import Model
-from report import Report
-from template import Template
-from access_totals import AccessTotals
+from utils import get_monthstamp
+
+class AccessTotals:
+    def __init__(self):
+        self.__attempts = []
+
+    def add_attempt(self, when, port):
+        key = get_monthstamp(when)
+        for attempt in self.__attempts:
+            if attempt[0] == key:
+                attempt[1] = attempt[1] + 1
+                return
+        self.__attempts.append([key, 1])
+
+    def get_totals_by_date(self):
+        return sorted(self.__attempts, key = lambda a: a[0])

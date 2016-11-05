@@ -1,0 +1,3 @@
+#foreach ($attempt in $model.totals_by_date)##
+$attempt[0], $attempt[1]
+#end

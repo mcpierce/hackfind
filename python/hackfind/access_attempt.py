@@ -15,7 +15,7 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-from utils import get_timestamp
+from utils import get_datestamp, get_timestamp
 
 class AccessAttempt:
     def __init__(self, port, when):
@@ -29,6 +29,10 @@ class AccessAttempt:
     @property
     def when(self):
         return self.__when
+
+    @property
+    def when_as_date(self):
+        return get_datestamp(self.__when)
 
     def __eq__(self, other):
         if isinstance(other, self.__class__):
