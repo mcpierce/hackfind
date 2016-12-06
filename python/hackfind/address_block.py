@@ -44,6 +44,9 @@ class AddressBlock:
     def total_attempts(self):
         return sum(addr.total_attempts for addr in self.__all)
 
+    def total_attempts_for_date(self, date):
+        return sum(addr.total_attempts_for_date(date) for addr in self.__all)
+
     def remove_address(self, address):
         if address in self.__all:
             self.__all.remove(address)

@@ -1,0 +1,4 @@
+date#foreach ($country in $model.sorted_countries),$country.name#end
+#foreach ($attempt in $model.totals_by_date)
+$attempt[0]#foreach ($country in $model.sorted_countries),$country.total_for_date($attempt[0])#end
+#end

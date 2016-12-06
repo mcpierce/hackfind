@@ -43,6 +43,14 @@ class Address:
     def total_attempts(self):
         return len(self.__attempts)
 
+    def total_attempts_for_date(self, date):
+        # return sum(filter(lambda a: a.when_as_date == date, self.__attempts))
+        result = 0
+        for attempt in self.__attempts:
+            if attempt.when_as_monthstamp == date:
+                result = result + 1
+        return result
+
     @classmethod
     def for_source(cls, address):
         """

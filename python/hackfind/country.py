@@ -44,6 +44,9 @@ class Country:
     def total_attempts(self):
         return self.__address_block.total_attempts
 
+    def total_for_date(self, date):
+        return self.__address_block.total_attempts_for_date(date)
+
     @property
     def name(self):
         return self.__name if self.__name is not None else "Indeterminate"
