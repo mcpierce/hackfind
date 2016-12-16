@@ -32,6 +32,7 @@ def usage(message):
     print("  -e, --earliest         the earliest date to include")
     print("  -l, --latest           the latest date to include")
     print("  -j, --today            show only entries for today")
+    print("  -y, --yesterday        show only entries for yesterday")
     print("  -p, --port=[PORT]      include attempts that target PORT")
     print("  -t, --template=[FILE]  runs the provided template")
     print("  -h, --help             show this help information")
@@ -47,12 +48,13 @@ latest_date = None
 DATE_MASK = "%m-%d-%Y"
 
 try:
-    opts, args = getopt.getopt(sys.argv[1:], "ai:e:l:jo:t:p:h",
+    opts, args = getopt.getopt(sys.argv[1:], "ai:e:l:jyo:t:p:h",
                                [
                                    "allports",
                                    "earliest=",
                                    "latest=",
                                    "today",
+                                   "yesterday",
                                    "input=",
                                    "output=",
                                    "port=",
@@ -80,9 +82,16 @@ for o, a in opts:
         latest_date = mktime(datetime.combine(parsed, time(23, 59, 59)).timetuple())
     elif o in ("-j", "--today"):
         if earliest_date is not None or latest_date is not None:
-            usage("Cannot use --earliest or --latest and also --today")
+            usage("Cannot use --earliest, --latest or --yesterday and --today")
         earliest_date = mktime(datetime.combine(datetime.today(), time(0, 0, 0)).timetuple())
         latest_date = mktime(datetime.combine(datetime.today(), time(23, 59, 59)).timetuple())
+    elif o in ("-y", "--yesterday"):
+        if earliest_date is not None or latest_date is not None:
+            usage("Cannot use --earliest, --latest or --today and --yesterday")
+        earliest_date = mktime(datetime.combine(datetime.today() - timedelta(days = 1),
+                                                time(0, 0, 0)).timetuple())
+        latest_date = mktime(datetime.combine(datetime.today() - timedelta(days = 1),
+                                              time(23, 59, 59)).timetuple())
     elif o in ("-p", "--port"):
         include_ports.append(int(a))
     elif o in ("-t", "--template"):
