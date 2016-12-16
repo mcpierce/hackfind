@@ -37,8 +37,22 @@ class Country:
     def total_addresses(self):
         return self.__address_block.total_addresses
 
+    @property
+    def sorted_addresses(self):
+        return self.__address_block.sorted_addresses
+
     def remove_address(self, address):
         self.__address_block.remove_address(address)
+
+    @property
+    def sorted_networks(self):
+        return self.__address_block.sorted_networks
+
+    def sorted_addresses_for_network(self, network):
+        return self.__address_block.sorted_addresses_for_network(network)
+
+    def total_attempts_for_network(self, network):
+        return self.__address_block.total_attempts_for_network(network)
 
     @property
     def total_attempts(self):

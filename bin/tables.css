@@ -1,0 +1,44 @@
+table {
+    font-family: verdana,arial,sans-serif;
+    font-size:medium;
+    color:#333333;
+    border-width: 1px;
+    border-color: #999999;
+    border-collapse: collapse;
+}
+
+tr.country_header {
+    background-color: #700;
+    color: #fff;
+    font-weight: bold;
+    font-size: larger;
+}
+
+tr.network_header {
+    background-color: #007;
+    color: #ff0;
+    font-weight: bold;
+}
+
+table th {
+    background-color:#c3dde0;
+    border-width: 1px;
+    padding: 8px;
+    border-style: solid;
+    border-color: #a9c6c9;
+}
+
+table tr, .normal {
+    background-color:#d4e3e5;
+}
+
+highlight {
+    background-color: #ffff66;
+}
+
+table td {
+    border-width: 1px;
+    padding: 8px;
+    border-style: solid;
+    border-color: #a9c6c9;
+}

@@ -23,6 +23,7 @@ class AddressBlock:
     def __init__(self):
         self.__root = {}
         self.__all = []
+        self.__networks = {}
 
     @property
     def root(self):
@@ -41,8 +42,22 @@ class AddressBlock:
         return len(self.__all)
 
     @property
+    def sorted_addresses(self):
+        return sorted(self.__all)
+
+    @property
+    def sorted_networks(self):
+        return sorted(self.__networks.keys())
+
+    def sorted_addresses_for_network(self, network):
+        return sorted(self.__networks[network])
+
+    @property
     def total_attempts(self):
         return sum(addr.total_attempts for addr in self.__all)
+
+    def total_attempts_for_network(self, network):
+        return sum(addr.total_attempts for addr in self.sorted_addresses_for_network(network))
 
     def total_attempts_for_date(self, date):
         return sum(addr.total_attempts_for_date(date) for addr in self.__all)
@@ -54,12 +69,20 @@ class AddressBlock:
 
     def __piecewise_add(self, address, one, two, three, four):
         top_key = "%s.%s" % (one, two)
+        network_key = "%s.%s.%s" % (one, two, three)
 
         if self.__root.has_key(top_key):
             top = self.__root[top_key]
         else:
             top = {}
             self.__root[top_key] = top
+
+        if self.__networks.has_key(network_key):
+            block = self.__networks[network_key]
+        else:
+            block = []
+            self.__networks[network_key] = block
+            if address not in block: block.append(address)
 
         if top.has_key(three):
             bottom = top[three]

@@ -38,6 +38,10 @@ class AccessAttempt:
     def when_as_monthstamp(self):
         return get_monthstamp(self.__when)
 
+    @property
+    def when_as_timestamp(self):
+        return get_timestamp(self.__when)
+
     def __eq__(self, other):
         if isinstance(other, self.__class__):
             return self.__dict__ == other.__dict__

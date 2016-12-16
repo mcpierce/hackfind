@@ -1,0 +1,63 @@
+<html>
+  <head>
+    <link rel="stylesheet" type="text/css" href="tables.css" />
+  </head>
+
+  <body>
+
+    <table>
+
+
+      <tbody>
+	#foreach($country in $model.sorted_countries)
+	<tr class="country_header">
+	  <td colspan="3">Country name</td>
+	  <td>Total Addresses</td>
+	</tr>
+	<tr class="country_header">
+	  <td colspan="3">$country.name</td>
+	  <td>$country.total_addresses</td>
+	</tr>
+
+	#foreach($network in $country.sorted_networks)
+	<tr class="network_header">
+	  <td>Network</td>
+	  <td>IP Address</td>
+	  <td>Date</td>
+	  <td>Port</td>
+	</tr>
+	#foreach($address in $country.sorted_addresses_for_network($network))
+	#set ($last_network = "")
+	#foreach($attempt in $address.attempts_sorted_by_date)
+	<tr class="network_details" onMouseOver="this.className='highlight'" onMouseOut="this.className='normal'">
+	  #if ($last_network != $network)
+	  <td>$network</td>
+	  #else
+	  <td />
+	  #end
+	  <td>$address</td>
+	  <td>$attempt.when_as_timestamp</td>
+	  <td>$attempt.port</td>
+	</tr>
+	#set ($last_network = $network)
+	#end
+	#end
+
+	<tr class="network_footer">
+	  <td colspan="3">Total attempts for network</td>
+	  <td>$country.total_attempts_for_network($network)</td>
+	</tr>
+	#end
+
+	<tr class="country_footer">
+	  <td class="country_total_label" colspan="3">Total attempts for $country.name</td>
+	  <td class="country_total">$country.total_attempts</td>
+	</tr>
+	#end
+
+      </tbody>
+    </table>
+
+  </body>
+</html>
+
