@@ -33,6 +33,24 @@ class Model:
         self.__included_ports = []
         self.__ignored_ports = []
         self.__access_totals = AccessTotals()
+        self.__earliest_date = None
+        self.__latest_date = None
+
+    @property
+    def earliest_date(self):
+        return self.__earliest_date
+
+    @earliest_date.setter
+    def earliest_date(self, time):
+        self.__earliest_date = time
+
+    @property
+    def latest_date(self):
+        return self.__latest_date
+
+    @latest_date.setter
+    def latest_date(self, time):
+        self.__latest_date = time
 
     @property
     def country_names(self):

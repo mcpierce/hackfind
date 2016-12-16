@@ -19,6 +19,8 @@ from __future__ import print_function
 
 import getopt, sys
 from hackfind import Model, Report, Template
+from datetime import timedelta, datetime, date, time
+from time import mktime
 
 def usage(message):
     if message is not None:
@@ -27,18 +29,28 @@ def usage(message):
     print("  INFILE  - the router log file")
     print("\nOPTIONS:")
     print("  -a, --allports         include all ports")
+    print("  -e, --earliest         the earliest date to include")
+    print("  -l, --latest           the latest date to include")
     print("  -p, --port=[PORT]      include attempts that target PORT")
     print("  -t, --template=[FILE]  runs the provided template")
     print("  -h, --help             show this help information")
+    print("")
+    print("DATES must be in the format MM-DD-YYYY")
 
 ifile = ""
 template_name = ""
 include_ports = []
+earliest_date = None
+latest_date = None
+
+DATE_MASK = "%m-%d-%Y"
 
 try:
-    opts, args = getopt.getopt(sys.argv[1:], "ai:o:t:p:h",
+    opts, args = getopt.getopt(sys.argv[1:], "ai:e:l:o:t:p:h",
                                [
                                    "allports",
+                                   "earliest=",
+                                   "latest=",
                                    "input=",
                                    "output=",
                                    "port=",
@@ -58,6 +70,12 @@ for o, a in opts:
         sys.exit(0)
     elif o in ("-i", "--input"):
         ifile = a
+    elif o in ("-e", "--earliest"):
+        parsed = datetime.strptime(a, DATE_MASK)
+        earliest_date = mktime(datetime.combine(parsed, time(0, 0, 0)).timetuple())
+    elif o in ("-l", "--latest"):
+        parsed = datetime.strptime(a, DATE_MASK)
+        latest_date = mktime(datetime.combine(parsed, time(23, 59, 59)).timetuple())
     elif o in ("-p", "--port"):
         include_ports.append(int(a))
     elif o in ("-t", "--template"):
@@ -72,8 +90,17 @@ if len(include_ports) == 0:
 if len(ifile) == 0:
     usage("missing or invalid filename: %s" % ifile)
 
+# if date ranges are specified, make sure they aren't inverted
+if earliest_date is not None and latest_date is not None:
+    if latest_date < earliest_date:
+        usage("Latest time cannot come before earliest time")
+
 model = Model(ifile)
 model.set_included_ports(include_ports)
+if earliest_date is not None:
+    model.earliest_date = earliest_date
+if latest_date is not None:
+    model.latest_date = latest_date
 model.process_input()
 
 if len(template_name) > 0:

@@ -76,5 +76,10 @@ class LogLine:
 
     def __add_attempt_to_model(self, source, port, when = None):
         if when is None: when = self.__model.default_timestamp
+        # if there is a time range then honor it
+        if self.__model.earliest_date is not None and when < self.__model.earliest_date:
+            return
+        if self.__model.latest_date is not None and when > self.__model.latest_date:
+            return
         self.__model.add_access_attempt(source, port, when)
             
