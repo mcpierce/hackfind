@@ -23,17 +23,20 @@ from datetime import timedelta, datetime, date, time
 from time import mktime
 
 def usage(message):
-    if message is not None:
-        print(message)
+    print("")
+    if message is not None and len(message) > 0:
+        print("ERROR: %s" % message)
+        print("")
     print("USAGE: hackfind -i INFILE OPTIONS\n")
     print("  INFILE  - the router log file")
     print("\nOPTIONS:")
     print("  -a, --allports         include all ports")
-    print("  -e, --earliest         the earliest date to include")
-    print("  -l, --latest           the latest date to include")
+    print("  -e, --earliest=DATE    the earliest date to include")
+    print("  -l, --latest=DATE      the latest date to include")
     print("  -j, --today            show only entries for today")
     print("  -y, --yesterday        show only entries for yesterday")
-    print("  -p, --port=[PORT]      include attempts that target PORT")
+    print("  -r, --year=YEAR        show only entries for a year")
+    print("  -p, --port=PORT        include attempts that target PORT")
     print("  -t, --template=[FILE]  runs the provided template")
     print("  -h, --help             show this help information")
     print("")
@@ -47,14 +50,23 @@ latest_date = None
 
 DATE_MASK = "%m-%d-%Y"
 
+def set_date_range(earliest = None, latest = None):
+    global earliest_date
+    global latest_date
+    if (earliest_date is not None and earliest is not None) or (latest_date is not None and latest is not None):
+        usage("date range arguments cannot be mixed")
+    if earliest is not None: earliest_date = earliest
+    if latest is not None: latest_date = latest
+
 try:
-    opts, args = getopt.getopt(sys.argv[1:], "ai:e:l:jyo:t:p:h",
+    opts, args = getopt.getopt(sys.argv[1:], "ai:e:l:jyr:o:t:p:h",
                                [
                                    "allports",
                                    "earliest=",
                                    "latest=",
                                    "today",
                                    "yesterday",
+                                   "year=",
                                    "input=",
                                    "output=",
                                    "port=",
@@ -63,7 +75,7 @@ try:
                                ])
 except getopt.GetoptError as err:
     print(str(err))
-    usage()
+    usage("")
     sys.exit(2)
 
 for o, a in opts:
@@ -76,22 +88,21 @@ for o, a in opts:
         ifile = a
     elif o in ("-e", "--earliest"):
         parsed = datetime.strptime(a, DATE_MASK)
-        earliest_date = mktime(datetime.combine(parsed, time(0, 0, 0)).timetuple())
+        set_date_range(earliest = mktime(datetime.combine(parsed, time(0, 0, 0)).timetuple()))
     elif o in ("-l", "--latest"):
         parsed = datetime.strptime(a, DATE_MASK)
-        latest_date = mktime(datetime.combine(parsed, time(23, 59, 59)).timetuple())
+        set_date_range(latest = mktime(datetime.combine(parsed, time(23, 59, 59)).timetuple()))
     elif o in ("-j", "--today"):
-        if earliest_date is not None or latest_date is not None:
-            usage("Cannot use --earliest, --latest or --yesterday and --today")
-        earliest_date = mktime(datetime.combine(datetime.today(), time(0, 0, 0)).timetuple())
-        latest_date = mktime(datetime.combine(datetime.today(), time(23, 59, 59)).timetuple())
+        set_date_range(mktime(datetime.combine(datetime.today(), time(0, 0, 0)).timetuple()),
+                       mktime(datetime.combine(datetime.today(), time(23, 59, 59)).timetuple()))
     elif o in ("-y", "--yesterday"):
-        if earliest_date is not None or latest_date is not None:
-            usage("Cannot use --earliest, --latest or --today and --yesterday")
-        earliest_date = mktime(datetime.combine(datetime.today() - timedelta(days = 1),
-                                                time(0, 0, 0)).timetuple())
-        latest_date = mktime(datetime.combine(datetime.today() - timedelta(days = 1),
-                                              time(23, 59, 59)).timetuple())
+        set_date_range(mktime(datetime.combine(datetime.today() - timedelta(days = 1), time(0, 0,0)).timetuple()),
+                       mktime(datetime.combine(datetime.today() - timedelta(days = 1), time(23, 59, 59)).timetuple()))
+    elif o in ("-r", "--year"):
+        year = int(a)
+        print("year=%d" % year)
+        set_date_range(mktime(datetime(year, 1, 1, 0, 0, 0).timetuple()),
+                       mktime(datetime(year, 12, 31, 23, 59, 59).timetuple()))
     elif o in ("-p", "--port"):
         include_ports.append(int(a))
     elif o in ("-t", "--template"):
